@@ -1,0 +1,85 @@
+name: Orchestrator - Comment Events
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-for-answers:
+    runs-on: ubuntu-latest
+    # Only run for maintainer/owner comments or if comment has answer patterns
+    if: |
+      github.event.comment.author_association == 'OWNER' ||
+      github.event.comment.author_association == 'MEMBER' ||
+      contains(github.event.comment.body, 'A1:') ||
+      contains(github.event.comment.body, 'Answer')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check if Answers Provided
+        id: check_answers
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          # Check if comment contains answer patterns
+          if echo "$COMMENT_BODY" | grep -qE '^(A[0-9]+:|Answer [0-9]+:|Decision:)'; then
+            echo "has_answers=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_answers=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Re-check Issue Readiness
+        if: steps.check_answers.outputs.has_answers == 'true'
+        id: check
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./.github/scripts/check-issue-readiness.sh
+          ./.github/scripts/check-issue-readiness.sh
+
+      - name: Resume Paused Agent
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body \
+            "🚀 **Questions Answered - Resuming Work**
+
+            All clarifying questions have been answered. Spawning development agent.
+
+            **Agent Type**: rust-pro
+            **Workflow**: TDD (Test-Driven Development)
+            **Status**: ⏸️ PAUSED → ▶️ IN PROGRESS
+
+            **Next Steps:**
+            1. Agent will check out implementation branch
+            2. Write tests first (TDD approach)
+            3. Implement features to pass tests
+            4. Submit PR when complete
+
+            ---
+            *Orchestrator Event-Driven System v1.0*"
+
+      - name: Update Labels
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --add-label "ready:work" \
+            --remove-label "waiting:answers" || true
+
+      - name: Trigger Agent Spawn
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          chmod +x ./.github/scripts/spawn-agent-comment.sh
+          ./.github/scripts/spawn-agent-comment.sh
