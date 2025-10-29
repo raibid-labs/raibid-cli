@@ -25,11 +25,24 @@ pub struct Cli {
 /// Available CLI subcommands
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    // Placeholder for future subcommands
-    // These will be added in CLI-002 and beyond:
-    // - Setup
-    // - Teardown
-    // - Status
+    /// Setup infrastructure component
+    Setup {
+        /// Component to setup (k3s, gitea, redis, keda, flux, all)
+        component: String,
+    },
+
+    /// Teardown infrastructure component
+    Teardown {
+        /// Component to teardown (k3s, gitea, redis, keda, flux, all)
+        component: String,
+    },
+
+    /// Show status of infrastructure components
+    Status {
+        /// Component to check status (k3s, gitea, redis, keda, flux, all, or omit for all)
+        component: Option<String>,
+    },
+    // Future subcommands (CLI-003+):
     // - Job
     // - Agent
     // - Mirror
