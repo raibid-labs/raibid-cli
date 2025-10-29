@@ -1,0 +1,98 @@
+name: Orchestrator - PR Events
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  handle-completion:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Extract Issue Number
+        id: issue
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          # Extract issue number from PR body or branch name
+          ISSUE_NUM=$(echo "$PR_BODY" | grep -oP 'Closes #\K\d+' || \
+                      echo "$PR_BODY" | grep -oP 'Fixes #\K\d+' || \
+                      echo "$PR_BRANCH" | grep -oP '\d+' | head -n1 || \
+                      echo "")
+          echo "number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+          echo "Extracted issue number: $ISSUE_NUM"
+
+      - name: Calculate PR Duration
+        id: duration
+        env:
+          CREATED_AT: ${{ github.event.pull_request.created_at }}
+          MERGED_AT: ${{ github.event.pull_request.merged_at }}
+        run: |
+          CREATED_SECONDS=$(date -d "$CREATED_AT" +%s)
+          MERGED_SECONDS=$(date -d "$MERGED_AT" +%s)
+          DURATION_SECONDS=$((MERGED_SECONDS - CREATED_SECONDS))
+          DURATION_HOURS=$((DURATION_SECONDS / 3600))
+          DURATION_MINUTES=$(((DURATION_SECONDS % 3600) / 60))
+          echo "hours=$DURATION_HOURS" >> $GITHUB_OUTPUT
+          echo "minutes=$DURATION_MINUTES" >> $GITHUB_OUTPUT
+
+      - name: Comment on Completed Issue
+        if: steps.issue.outputs.number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ steps.issue.outputs.number }} --body \
+            "✅ **Work Completed**
+
+            PR #${{ github.event.pull_request.number }} has been merged!
+
+            **Status**: ▶️ IN PROGRESS → ✅ COMPLETE
+            **Duration**: ${{ steps.duration.outputs.hours }}h ${{ steps.duration.outputs.minutes }}m
+            **Merged by**: @${{ github.event.pull_request.merged_by.login }}
+
+            **PR Details:**
+            - Title: ${{ github.event.pull_request.title }}
+            - Commits: ${{ github.event.pull_request.commits }}
+            - Changed files: ${{ github.event.pull_request.changed_files }}
+
+            ---
+            *Orchestrator Event-Driven System v1.0*"
+
+      - name: Close Issue
+        if: steps.issue.outputs.number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue close ${{ steps.issue.outputs.number }} --comment \
+            "Issue completed via PR #${{ github.event.pull_request.number }}"
+
+      - name: Find Next Issue
+        id: next
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./.github/scripts/assign-next-issue.sh
+          ./.github/scripts/assign-next-issue.sh
+
+      - name: Spawn Agent for Next Issue
+        if: steps.next.outputs.issue_number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.next.outputs.issue_number }}
+        run: |
+          chmod +x ./.github/scripts/spawn-agent-comment.sh
+          ./.github/scripts/spawn-agent-comment.sh
+
+      - name: No More Issues
+        if: steps.next.outputs.issue_number == ''
+        run: |
+          echo "✅ No more ready issues to assign. All caught up!"

@@ -1,0 +1,77 @@
+name: Orchestrator - Issue Events
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check Issue Readiness
+        id: check
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./.github/scripts/check-issue-readiness.sh
+          ./.github/scripts/check-issue-readiness.sh
+
+      - name: Add Waiting Label
+        if: steps.check.outputs.ready == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --add-label "waiting:answers" \
+            --remove-label "ready:work" || true
+
+      - name: Post Paused Comment
+        if: steps.check.outputs.ready == 'false' && steps.check.outputs.unanswered_count != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body \
+            "⏸️ **Agent Status: Paused**
+
+            This issue has **${{ steps.check.outputs.unanswered_count }}** unanswered clarifying questions.
+
+            **What's needed:**
+            Please answer the clarifying questions in this issue, then the orchestrator will automatically spawn a development agent.
+
+            **How to answer:**
+            Post a comment with answers in this format:
+            \`\`\`
+            A1: Your answer to question 1
+            A2: Your answer to question 2
+            \`\`\`
+
+            **Current Status:** ⏸️ Paused, waiting for answers
+
+            ---
+            *Orchestrator Event-Driven System v1.0*"
+
+      - name: Update to Ready Label
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --add-label "ready:work" \
+            --remove-label "waiting:answers" || true
+
+      - name: Spawn Agent
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          chmod +x ./.github/scripts/spawn-agent-comment.sh
+          ./.github/scripts/spawn-agent-comment.sh

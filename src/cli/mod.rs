@@ -25,6 +25,24 @@ pub struct Cli {
 /// Available CLI subcommands
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Setup infrastructure component
+    Setup {
+        /// Component to setup (k3s, gitea, redis, keda, flux, all)
+        component: String,
+    },
+
+    /// Teardown infrastructure component
+    Teardown {
+        /// Component to teardown (k3s, gitea, redis, keda, flux, all)
+        component: String,
+    },
+
+    /// Show status of infrastructure components
+    Status {
+        /// Component to check status (k3s, gitea, redis, keda, flux, all, or omit for all)
+        component: Option<String>,
+    },
+
     /// Job management commands
     Job {
         #[command(subcommand)]

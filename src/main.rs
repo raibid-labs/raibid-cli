@@ -6,7 +6,7 @@ use anyhow::Result;
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
-use cli::{Cli, Commands};
+use cli::Cli;
 
 fn main() -> Result<()> {
     // Initialize logging
@@ -26,9 +26,34 @@ fn main() -> Result<()> {
             std::process::exit(1);
         }
         Some(cmd) => match cmd {
-            Commands::Job { command } => commands::job::execute(command),
-            Commands::Agent { command } => commands::agent::execute(command),
-            Commands::Mirror { command } => commands::mirror::execute(command),
+            cli::Commands::Setup { component } => {
+                // Parse component string
+                let component = component
+                    .parse()
+                    .map_err(|e| anyhow::anyhow!("Invalid component: {}", e))?;
+                commands::setup::execute(component)
+            }
+            cli::Commands::Teardown { component } => {
+                // Parse component string
+                let component = component
+                    .parse()
+                    .map_err(|e| anyhow::anyhow!("Invalid component: {}", e))?;
+                commands::teardown::execute(component)
+            }
+            cli::Commands::Status { component } => {
+                // Parse optional component string
+                let component = match component {
+                    Some(c) => Some(
+                        c.parse()
+                            .map_err(|e| anyhow::anyhow!("Invalid component: {}", e))?,
+                    ),
+                    None => None,
+                };
+                commands::status::execute(component)
+            }
+            cli::Commands::Job { command } => commands::job::execute(command),
+            cli::Commands::Agent { command } => commands::agent::execute(command),
+            cli::Commands::Mirror { command } => commands::mirror::execute(command),
         },
     }
 }
