@@ -51,6 +51,9 @@ fn main() -> Result<()> {
                 };
                 commands::status::execute(component)
             }
+            cli::Commands::Job { command } => commands::job::execute(command),
+            cli::Commands::Agent { command } => commands::agent::execute(command),
+            cli::Commands::Mirror { command } => commands::mirror::execute(command),
         },
     }
 }

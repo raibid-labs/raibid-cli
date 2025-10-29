@@ -6,8 +6,6 @@
 pub mod setup;
 pub mod status;
 pub mod teardown;
-
-// Future command implementations (CLI-003+):
-// - pub mod job;
-// - pub mod agent;
-// - pub mod mirror;
+pub mod job;
+pub mod agent;
+pub mod mirror;
