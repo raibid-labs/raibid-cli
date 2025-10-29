@@ -107,6 +107,86 @@ See [System Architecture Diagram](docs/diagrams/system-architecture.mmd) for det
 
 See the [Project Plan](docs/work/plan.md) for detailed implementation steps.
 
+## 🖥️ CLI Usage
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/raibid-labs/raibid-cli.git
+cd raibid-cli
+
+# Build the CLI
+cargo build --release
+
+# The binary will be at: target/release/raibid-cli
+```
+
+### Basic Commands
+
+```bash
+# Display help
+raibid-cli --help
+
+# Display version
+raibid-cli --version
+
+# Enable verbose logging
+raibid-cli --verbose <command>
+```
+
+### Module Structure
+
+The CLI is organized into the following modules:
+
+- **`src/cli/`** - CLI argument parsing and command definitions (using clap)
+- **`src/commands/`** - Command implementations (to be added in CLI-002+)
+- **`src/config/`** - Configuration management (TOML-based)
+
+### Available Commands
+
+> **Note:** Command implementations are in progress. The following commands will be available in upcoming releases:
+>
+> - `setup` - Bootstrap infrastructure components (k3s, Gitea, Redis, KEDA)
+> - `teardown` - Remove infrastructure and cleanup resources
+> - `status` - Check system status and health
+> - `job` - Manage CI jobs (list, show, cancel, retry, logs)
+> - `agent` - Manage build agents (list, show, scale)
+> - `mirror` - Manage repository mirrors (add, list, sync, remove)
+> - `tui` - Launch terminal UI dashboard
+
+### Configuration
+
+Configuration will support multiple sources (priority order):
+
+1. Command-line flags (highest priority)
+2. Environment variables
+3. Project-local config: `./raibid.toml`
+4. User config: `~/.config/raibid/config.toml`
+5. System config: `/etc/raibid/config.toml`
+6. Defaults (lowest priority)
+
+See CLI-007 for full configuration implementation.
+
+### Testing
+
+```bash
+# Run all tests
+cargo test
+
+# Run with verbose output
+cargo test -- --nocapture
+
+# Run specific test
+cargo test test_version_flag
+
+# Check code with clippy
+cargo clippy -- -D warnings
+
+# Format code
+cargo fmt
+```
+
 ## 📊 System Specifications
 
 ### DGX Spark Hardware

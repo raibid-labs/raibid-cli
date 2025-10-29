@@ -1,0 +1,25 @@
+[package]
+name = "raibid-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Raibid Labs"]
+description = "DGX Spark Personal CI Agent Pool - TUI-first developer tool for managing self-hosted CI agents"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/raibid-labs/raibid-cli"
+
+[[bin]]
+name = "raibid-cli"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "cargo"] }
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+colored = "2"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"

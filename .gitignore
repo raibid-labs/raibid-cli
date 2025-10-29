@@ -21,3 +21,8 @@ target
 #.idea/
 
 .claude*
+
+
+# Added by cargo
+
+/target
