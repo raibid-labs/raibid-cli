@@ -1,6 +1,7 @@
 mod cli;
 mod commands;
 mod config;
+mod tui;
 
 use anyhow::Result;
 use clap::Parser;
@@ -25,10 +26,13 @@ fn main() -> Result<()> {
             println!("No command specified. Use --help for usage information.");
             std::process::exit(1);
         }
-        Some(_cmd) => {
-            // Command handling will be implemented in CLI-002 and beyond
-            println!("Command execution not yet implemented");
-            Ok(())
+        Some(cli::Commands::Config(cmd)) => {
+            // Handle config subcommands
+            commands::config::handle(&cmd)
+        }
+        Some(cli::Commands::Tui) => {
+            // Launch TUI dashboard
+            tui::launch()
         }
     }
 }
