@@ -1,48 +1,26 @@
 //! Configuration management
 //!
 //! This module handles loading and managing configuration from various sources:
-//! - Command-line flags
+//! - Configuration files (YAML format)
 //! - Environment variables
-//! - Configuration files (TOML format)
+//! - Command-line flags
 //! - Defaults
+//!
+//! Configuration sources are merged with the following precedence (highest to lowest):
+//! 1. Environment variables (RAIBID_*)
+//! 2. Local file (./raibid.yaml)
+//! 3. User file (~/.config/raibid/config.yaml)
+//! 4. System file (/etc/raibid/config.yaml)
+//! 5. Defaults
 
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+mod loader;
+mod schema;
 
-/// Application configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    /// Logging level (trace, debug, info, warn, error)
-    #[serde(default = "default_log_level")]
-    pub log_level: String,
-}
-
-fn default_log_level() -> String {
-    "info".to_string()
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            log_level: default_log_level(),
-        }
-    }
-}
-
-impl Config {
-    /// Load configuration from file
-    ///
-    /// This is a placeholder that will be fully implemented in CLI-007.
-    #[allow(dead_code)]
-    pub fn load_from_file(_path: &PathBuf) -> anyhow::Result<Self> {
-        // Placeholder - will be implemented in CLI-007
-        Ok(Self::default())
-    }
-
-    /// Get merged configuration from all sources
-    pub fn load() -> anyhow::Result<Self> {
-        // Placeholder - will be implemented in CLI-007
-        // Will merge: CLI args > env vars > file > defaults
-        Ok(Self::default())
-    }
-}
+// Re-export public API
+pub use loader::{
+    apply_env_overrides, discover_config_files, expand_paths, load_config, load_config_file,
+    substitute_env_vars, validate_config,
+};
+pub use schema::{
+    AgentsConfig, ApiConfig, ClusterConfig, Config, GiteaConfig, RedisConfig, UiConfig,
+};
