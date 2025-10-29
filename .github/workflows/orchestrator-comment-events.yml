@@ -16,7 +16,8 @@ jobs:
       github.event.comment.author_association == 'OWNER' ||
       github.event.comment.author_association == 'MEMBER' ||
       contains(github.event.comment.body, 'A1:') ||
-      contains(github.event.comment.body, 'Answer')
+      contains(github.event.comment.body, 'Answer') ||
+      contains(github.event.comment.body, '1.')
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -26,8 +27,8 @@ jobs:
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
-          # Check if comment contains answer patterns
-          if echo "$COMMENT_BODY" | grep -qE '^(A[0-9]+:|Answer [0-9]+:|Decision:)'; then
+          # Check if comment contains answer patterns (A1:, Answer 1:, Decision:, or 1., 2., etc.)
+          if echo "$COMMENT_BODY" | grep -qE '^([0-9]+\.|A[0-9]+:|Answer [0-9]+:|Decision:)'; then
             echo "has_answers=true" >> $GITHUB_OUTPUT
           else
             echo "has_answers=false" >> $GITHUB_OUTPUT
