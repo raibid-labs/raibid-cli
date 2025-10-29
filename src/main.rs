@@ -6,7 +6,7 @@ use anyhow::Result;
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
-use cli::Cli;
+use cli::{Cli, Commands};
 
 fn main() -> Result<()> {
     // Initialize logging
@@ -25,11 +25,11 @@ fn main() -> Result<()> {
             println!("No command specified. Use --help for usage information.");
             std::process::exit(1);
         }
-        Some(_cmd) => {
-            // Command handling will be implemented in CLI-002 and beyond
-            println!("Command execution not yet implemented");
-            Ok(())
-        }
+        Some(cmd) => match cmd {
+            Commands::Job { command } => commands::job::execute(command),
+            Commands::Agent { command } => commands::agent::execute(command),
+            Commands::Mirror { command } => commands::mirror::execute(command),
+        },
     }
 }
 
