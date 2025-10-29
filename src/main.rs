@@ -25,11 +25,33 @@ fn main() -> Result<()> {
             println!("No command specified. Use --help for usage information.");
             std::process::exit(1);
         }
-        Some(_cmd) => {
-            // Command handling will be implemented in CLI-002 and beyond
-            println!("Command execution not yet implemented");
-            Ok(())
-        }
+        Some(cmd) => match cmd {
+            cli::Commands::Setup { component } => {
+                // Parse component string
+                let component = component
+                    .parse()
+                    .map_err(|e| anyhow::anyhow!("Invalid component: {}", e))?;
+                commands::setup::execute(component)
+            }
+            cli::Commands::Teardown { component } => {
+                // Parse component string
+                let component = component
+                    .parse()
+                    .map_err(|e| anyhow::anyhow!("Invalid component: {}", e))?;
+                commands::teardown::execute(component)
+            }
+            cli::Commands::Status { component } => {
+                // Parse optional component string
+                let component = match component {
+                    Some(c) => Some(
+                        c.parse()
+                            .map_err(|e| anyhow::anyhow!("Invalid component: {}", e))?,
+                    ),
+                    None => None,
+                };
+                commands::status::execute(component)
+            }
+        },
     }
 }
 
