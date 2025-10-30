@@ -116,7 +116,7 @@ Comprehensive testing documentation with:
 
 ### 6. GitHub Workflows README
 
-**File**: `/home/beengud/raibid-labs/raibid-cli/.github/README.md`
+**File**: `/home/beengud/raibid-labs/raibid-cli/.github/WORKFLOWS.md`
 
 Quick reference guide covering:
 - Architecture diagram
@@ -281,7 +281,7 @@ If critical failure occurs:
 - **Design**: [EVENT_DRIVEN_ORCHESTRATION.md](EVENT_DRIVEN_ORCHESTRATION.md)
 - **Orchestrator Instructions**: [ORCHESTRATOR_AGENT.md](ORCHESTRATOR_AGENT.md)
 - **Testing Guide**: [TESTING_EVENT_DRIVEN_ORCHESTRATION.md](TESTING_EVENT_DRIVEN_ORCHESTRATION.md)
-- **Workflows README**: [.github/README.md](../.github/README.md)
+- **Workflows Documentation**: [.github/WORKFLOWS.md](../.github/WORKFLOWS.md)
 
 ## Support & Troubleshooting
 
