@@ -282,6 +282,224 @@ pub fn generate_mock_data(
     (jobs, agents, queue_data)
 }
 
+/// Mock log entry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MockLogEntry {
+    /// Timestamp of the log entry
+    pub timestamp: DateTime<Utc>,
+    /// Log level (INFO, WARN, ERROR)
+    pub level: LogLevel,
+    /// Log message
+    pub message: String,
+}
+
+/// Log level for mock logs
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LogLevel {
+    Info,
+    Warn,
+    Error,
+}
+
+impl LogLevel {
+    /// Get color for log level
+    pub fn color_code(&self) -> &str {
+        match self {
+            LogLevel::Info => "\x1b[32m",  // Green
+            LogLevel::Warn => "\x1b[33m",  // Yellow
+            LogLevel::Error => "\x1b[31m", // Red
+        }
+    }
+
+    /// Get display string
+    pub fn as_str(&self) -> &str {
+        match self {
+            LogLevel::Info => "INFO",
+            LogLevel::Warn => "WARN",
+            LogLevel::Error => "ERROR",
+        }
+    }
+}
+
+/// Mock job logs
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MockJobLogs {
+    /// Job ID
+    pub job_id: String,
+    /// Log entries
+    pub entries: Vec<MockLogEntry>,
+}
+
+impl MockJobLogs {
+    /// Generate realistic job logs
+    pub fn for_job(job: &MockJob) -> Self {
+        let mut entries = Vec::new();
+        let mut current_time = job.start_time;
+
+        // Initial logs
+        entries.push(MockLogEntry {
+            timestamp: current_time,
+            level: LogLevel::Info,
+            message: format!("Job {} started", job.id),
+        });
+
+        current_time += Duration::seconds(2);
+        entries.push(MockLogEntry {
+            timestamp: current_time,
+            level: LogLevel::Info,
+            message: format!("Cloning repository {}...", job.repo),
+        });
+
+        current_time += Duration::seconds(3);
+        entries.push(MockLogEntry {
+            timestamp: current_time,
+            level: LogLevel::Info,
+            message: format!("Checked out branch: {}", job.branch),
+        });
+
+        current_time += Duration::seconds(5);
+        entries.push(MockLogEntry {
+            timestamp: current_time,
+            level: LogLevel::Info,
+            message: "Running cargo build --release...".to_string(),
+        });
+
+        // Build progress logs
+        let build_phases = [
+            ("Downloading crates", 8),
+            ("Compiling dependencies (1/3)", 45),
+            ("Compiling dependencies (2/3)", 45),
+            ("Compiling dependencies (3/3)", 45),
+            ("Compiling project crates", 120),
+        ];
+
+        for (phase, duration_secs) in build_phases.iter() {
+            current_time += Duration::seconds(*duration_secs);
+            entries.push(MockLogEntry {
+                timestamp: current_time,
+                level: LogLevel::Info,
+                message: phase.to_string(),
+            });
+        }
+
+        // Test phase
+        if job.progress >= 80 {
+            current_time += Duration::seconds(15);
+            entries.push(MockLogEntry {
+                timestamp: current_time,
+                level: LogLevel::Info,
+                message: "Running tests...".to_string(),
+            });
+
+            current_time += Duration::seconds(30);
+            entries.push(MockLogEntry {
+                timestamp: current_time,
+                level: LogLevel::Info,
+                message: "test result: ok. 245 passed; 0 failed; 0 ignored".to_string(),
+            });
+        }
+
+        // Status-specific logs
+        match job.status {
+            JobStatus::Running => {
+                current_time += Duration::seconds(5);
+                entries.push(MockLogEntry {
+                    timestamp: current_time,
+                    level: LogLevel::Info,
+                    message: format!("Build progress: {}%", job.progress),
+                });
+            }
+            JobStatus::Success => {
+                current_time += Duration::seconds(10);
+                entries.push(MockLogEntry {
+                    timestamp: current_time,
+                    level: LogLevel::Info,
+                    message: "Build completed successfully".to_string(),
+                });
+                entries.push(MockLogEntry {
+                    timestamp: current_time + Duration::seconds(1),
+                    level: LogLevel::Info,
+                    message: format!(
+                        "Total duration: {}s",
+                        job.duration.unwrap_or(0)
+                    ),
+                });
+            }
+            JobStatus::Failed => {
+                current_time += Duration::seconds(5);
+                entries.push(MockLogEntry {
+                    timestamp: current_time,
+                    level: LogLevel::Error,
+                    message: "Build failed: compilation error in src/main.rs".to_string(),
+                });
+                entries.push(MockLogEntry {
+                    timestamp: current_time + Duration::seconds(1),
+                    level: LogLevel::Error,
+                    message: "error[E0425]: cannot find value `undefined_var` in this scope"
+                        .to_string(),
+                });
+            }
+            JobStatus::Pending => {
+                // No additional logs for pending
+            }
+        }
+
+        Self {
+            job_id: job.id.clone(),
+            entries,
+        }
+    }
+
+    /// Get formatted log lines
+    pub fn formatted_lines(&self) -> Vec<String> {
+        self.entries
+            .iter()
+            .map(|entry| {
+                format!(
+                    "[{}] {}{}\x1b[0m  {}",
+                    entry.timestamp.format("%H:%M:%S"),
+                    entry.level.color_code(),
+                    entry.level.as_str(),
+                    entry.message
+                )
+            })
+            .collect()
+    }
+}
+
+/// Generate system logs for the Logs tab
+pub fn generate_system_logs() -> Vec<MockLogEntry> {
+    let mut logs = Vec::new();
+    let mut current_time = Utc::now() - Duration::minutes(30);
+
+    let log_messages = [
+        (LogLevel::Info, "Redis connection pool initialized"),
+        (LogLevel::Info, "Flux sync completed: 3 deployments updated"),
+        (LogLevel::Info, "KEDA autoscaler triggered: scaling to 5 agents"),
+        (LogLevel::Error, "Job job-4518 failed: build timeout exceeded"),
+        (LogLevel::Info, "Job job-4521 dispatched to agent dgx-agent-002"),
+        (LogLevel::Warn, "High queue depth detected: 15 jobs pending"),
+        (LogLevel::Info, "Job job-4523 completed successfully"),
+        (LogLevel::Info, "Agent dgx-agent-001 started successfully"),
+        (LogLevel::Info, "Agent dgx-agent-003 idle for 300s, scheduling shutdown"),
+        (LogLevel::Warn, "Memory usage high on dgx-agent-002: 85%"),
+        (LogLevel::Info, "Cache hit rate: 78% (last hour)"),
+        (LogLevel::Info, "Repository sync: raibid-cli updated"),
+    ];
+
+    for (level, message) in log_messages.iter() {
+        current_time = current_time + Duration::minutes(2) + Duration::seconds(15);
+        logs.push(MockLogEntry {
+            timestamp: current_time,
+            level: *level,
+            message: message.to_string(),
+        });
+    }
+
+    logs.reverse(); // Most recent first
+    logs
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
