@@ -7,7 +7,7 @@ use anyhow::Result;
 use colored::Colorize;
 use std::thread;
 use std::time::Duration;
-use crate::infrastructure::{K3sInstaller, GiteaInstaller, RedisInstaller, FluxInstaller, FluxConfig, KedaInstaller};
+use crate::infrastructure::{K3sInstaller, GiteaInstaller, RedisInstaller, KedaInstaller, FluxInstaller, FluxConfig};
 
 /// Infrastructure component that can be set up
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,6 +27,7 @@ impl Component {
             Component::K3s => "k3s",
             Component::Gitea => "gitea",
             Component::Redis => "redis",
+            Component::Keda => "keda",
             Component::Flux => "flux",
             Component::All => "all",
         }
@@ -38,6 +39,7 @@ impl Component {
             Component::K3s => vec![],
             Component::Gitea => vec![Component::K3s],
             Component::Redis => vec![Component::K3s],
+            Component::Keda => vec![Component::K3s],
             Component::Flux => vec![Component::K3s, Component::Gitea],
             Component::All => vec![],
         }
@@ -123,6 +125,20 @@ fn setup_component(component: Component) -> Result<()> {
         Component::K3s => setup_k3s_real()?,
         Component::Gitea => setup_gitea_real()?,
         Component::Redis => setup_redis_real()?,
+        Component::Keda => setup_keda_real()?,
+        Component::Flux => setup_flux_real()?,
+        _ => simulate_setup(component)?,
+    }
+
+    println!(
+        "{} {} {}",
+        "✓".bold().green(),
+        component.name().bold(),
+        "setup completed successfully!".green()
+    );
+
+    Ok(())
+}
 
 /// Show component dependencies
 fn show_dependencies(component: Component) -> Result<()> {
@@ -201,6 +217,7 @@ fn simulate_setup(component: Component) -> Result<()> {
             "Configuring Redis Streams",
             "Testing connection",
         ],
+        Component::Keda => vec![
             "Adding KEDA Helm repository",
             "Installing KEDA operator",
             "Configuring autoscaling",
@@ -486,6 +503,87 @@ fn setup_redis_real() -> Result<()> {
     Ok(())
 }
 
+/// Real KEDA installation implementation
+fn setup_keda_real() -> Result<()> {
+    println!("{}", "Installing KEDA autoscaler...".bold());
+
+    // Create installer
+    let installer = KedaInstaller::new()?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Check Helm
+        print!("  {} Checking Helm... ", "→".blue());
+        installer.check_helm()?;
+        println!("{}", "done".green());
+
+        // Add Helm repository
+        print!("  {} Adding KEDA Helm repository... ", "→".blue());
+        installer.add_helm_repo()?;
+        println!("{}", "done".green());
+
+        // Create namespace
+        print!("  {} Creating KEDA namespace... ", "→".blue());
+        installer.create_namespace()?;
+        println!("{}", "done".green());
+
+        // Deploy KEDA
+        print!("  {} Deploying KEDA operators... ", "→".blue());
+        installer.deploy_keda()?;
+        println!("{}", "done".green());
+
+        // Wait for KEDA to be ready
+        print!("  {} Waiting for KEDA to be ready... ", "→".blue());
+        installer.wait_for_ready()?;
+        println!("{}", "done".green());
+
+        // Validate installation
+        print!("  {} Validating KEDA installation... ", "→".blue());
+        installer.validate()?;
+        println!("{}", "done".green());
+
+        // Create ScaledObject for Redis Streams
+        print!("  {} Creating ScaledObject for Redis Streams... ", "→".blue());
+        installer.create_scaled_object()?;
+        println!("{}", "done".green());
+
+        // Display KEDA status
+        println!();
+        println!("{}", "KEDA Status:".bold().cyan());
+        match installer.get_scaled_object_status() {
+            Ok(status) => {
+                for line in status.lines() {
+                    println!("  {}", line);
+                }
+            }
+            Err(e) => {
+                println!("  {} Failed to get status: {}", "⚠".yellow(), e);
+            }
+        }
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.uninstall() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
+
+    println!();
+    Ok(())
+}
+
 /// Real Flux installation implementation
 fn setup_flux_real() -> Result<()> {
     println!("{}", "Installing Flux GitOps...".bold());
@@ -619,7 +717,3 @@ fn setup_flux_real() -> Result<()> {
     println!();
     Ok(())
 }
-
-/// Real KEDA installation implementation
-
-/// Real KEDA installation implementation
