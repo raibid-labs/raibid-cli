@@ -1,13 +1,13 @@
 //! Setup command implementation
 //!
 //! Implements the setup command for infrastructure components.
-//! Currently supports real k3s installation, with mock implementations for other components.
+//! Currently supports real k3s and Gitea installations, with mock implementations for other components.
 
 use anyhow::Result;
 use colored::Colorize;
 use std::thread;
 use std::time::Duration;
-use crate::infrastructure::K3sInstaller;
+use crate::infrastructure::{K3sInstaller, GiteaInstaller};
 
 /// Infrastructure component that can be set up
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -123,6 +123,7 @@ fn setup_component(component: Component) -> Result<()> {
     // Run actual setup or simulation based on component
     match component {
         Component::K3s => setup_k3s_real()?,
+        Component::Gitea => setup_gitea_real()?,
         _ => simulate_setup(component)?,
     }
 
@@ -280,6 +281,94 @@ fn setup_k3s_real() -> Result<()> {
         print!("  {} Validating cluster... ", "→".blue());
         installer.validate_cluster()?;
         println!("{}", "done".green());
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.rollback() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
+
+    // Cleanup on success
+    installer.cleanup()?;
+
+    println!();
+    Ok(())
+}
+
+/// Real Gitea installation implementation
+fn setup_gitea_real() -> Result<()> {
+    println!("{}", "Installing Gitea via Helm...".bold());
+
+    // Create installer
+    let installer = GiteaInstaller::new()?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Check prerequisites
+        print!("  {} Checking prerequisites... ", "→".blue());
+        installer.check_kubectl()?;
+        println!("{}", "done".green());
+
+        // Install Helm if needed
+        print!("  {} Installing Helm if needed... ", "→".blue());
+        if installer.check_helm().is_err() {
+            installer.install_helm()?;
+        }
+        println!("{}", "done".green());
+
+        // Create namespace
+        print!("  {} Creating Gitea namespace... ", "→".blue());
+        installer.create_namespace()?;
+        println!("{}", "done".green());
+
+        // Add Helm repository
+        print!("  {} Adding Gitea Helm repository... ", "→".blue());
+        installer.add_helm_repo()?;
+        println!("{}", "done".green());
+
+        // Deploy Helm chart
+        print!("  {} Deploying Gitea Helm chart (this may take several minutes)... ", "→".blue());
+        installer.deploy_helm_chart()?;
+        println!("{}", "done".green());
+
+        // Wait for pods to be ready
+        print!("  {} Waiting for Gitea pods to be ready... ", "→".blue());
+        installer.wait_for_ready()?;
+        println!("{}", "done".green());
+
+        // Validate installation
+        print!("  {} Validating installation... ", "→".blue());
+        installer.validate_installation()?;
+        println!("{}", "done".green());
+
+        // Get service info
+        print!("  {} Getting service information... ", "→".blue());
+        let service_info = installer.get_service_info()?;
+        println!("{}", "done".green());
+
+        // Print access information
+        println!();
+        println!("{}", "Gitea Access Information:".bold().cyan());
+        println!("  {} URL: {}", "→".blue(), service_info.access_url().bold().green());
+
+        let (admin_user, admin_password) = installer.get_credentials();
+        println!("  {} Admin username: {}", "→".blue(), admin_user.bold().yellow());
+        println!("  {} Admin password: {}", "→".blue(), admin_password.bold().yellow());
+        println!();
+        println!("{}", "⚠ Please save these credentials securely!".yellow().bold());
 
         Ok(())
     })();
