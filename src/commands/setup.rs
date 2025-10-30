@@ -1,12 +1,13 @@
 //! Setup command implementation
 //!
-//! Mock implementation of the setup command for infrastructure components.
-//! This is a placeholder that simulates the setup process with colorful output.
+//! Implements the setup command for infrastructure components.
+//! Currently supports real k3s installation, with mock implementations for other components.
 
 use anyhow::Result;
 use colored::Colorize;
 use std::thread;
 use std::time::Duration;
+use crate::infrastructure::K3sInstaller;
 
 /// Infrastructure component that can be set up
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -119,8 +120,11 @@ fn setup_component(component: Component) -> Result<()> {
     // Run pre-flight checks
     run_preflight_checks()?;
 
-    // Simulate setup process
-    simulate_setup(component)?;
+    // Run actual setup or simulation based on component
+    match component {
+        Component::K3s => setup_k3s_real()?,
+        _ => simulate_setup(component)?,
+    }
 
     println!(
         "{} {} {}",
@@ -229,6 +233,75 @@ fn simulate_setup(component: Component) -> Result<()> {
         thread::sleep(Duration::from_millis(200));
         println!("{}", "done".green());
     }
+
+    println!();
+    Ok(())
+}
+
+/// Real k3s installation implementation
+fn setup_k3s_real() -> Result<()> {
+    println!("{}", "Installing k3s cluster...".bold());
+
+    // Create runtime for async operations
+    let runtime = tokio::runtime::Runtime::new()?;
+
+    // Create installer
+    let installer = K3sInstaller::new()?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Download binary
+        print!("  {} Downloading k3s binary... ", "→".blue());
+        let binary_path = runtime.block_on(installer.download_binary())?;
+        println!("{}", "done".green());
+
+        // Download and verify checksums
+        print!("  {} Verifying checksum... ", "→".blue());
+        let checksums = runtime.block_on(installer.download_checksums())?;
+        installer.verify_checksum(&binary_path, &checksums)?;
+        println!("{}", "done".green());
+
+        // Install binary
+        print!("  {} Installing k3s binary... ", "→".blue());
+        installer.install_binary(&binary_path)?;
+        println!("{}", "done".green());
+
+        // Bootstrap cluster
+        print!("  {} Starting k3s cluster... ", "→".blue());
+        installer.bootstrap_cluster()?;
+        println!("{}", "done".green());
+
+        // Configure kubeconfig
+        print!("  {} Configuring kubectl... ", "→".blue());
+        installer.configure_kubeconfig()?;
+        println!("{}", "done".green());
+
+        // Validate cluster
+        print!("  {} Validating cluster... ", "→".blue());
+        installer.validate_cluster()?;
+        println!("{}", "done".green());
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.rollback() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
+
+    // Cleanup on success
+    installer.cleanup()?;
 
     println!();
     Ok(())

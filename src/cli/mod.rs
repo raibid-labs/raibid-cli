@@ -30,11 +30,23 @@ pub enum Commands {
     Config(ConfigCommand),
     /// Launch the TUI dashboard for monitoring and management
     Tui,
+    /// Setup infrastructure component
+    Setup {
+        /// Component to setup (k3s, gitea, redis, keda, flux, all)
+        component: String,
+    },
+    /// Teardown infrastructure component
+    Teardown {
+        /// Component to teardown (k3s, gitea, redis, keda, flux, all)
+        component: String,
+    },
+    /// Show status of infrastructure component
+    Status {
+        /// Component to show status for (k3s, gitea, redis, keda, flux, all)
+        component: Option<String>,
+    },
     // Placeholder for future subcommands
-    // These will be added in CLI-002 and beyond:
-    // - Setup
-    // - Teardown
-    // - Status
+    // These will be added in future issues:
     // - Job
     // - Agent
     // - Mirror
