@@ -28,6 +28,24 @@ A terminal-based management interface for running ephemeral, auto-scaling CI/CD 
 
 ## Quick Start
 
+### Prerequisites
+
+**Rust is required to build raibid-cli.** Install it using [rustup](https://rustup.rs):
+
+```bash
+# Linux/macOS
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Follow the prompts, then reload your shell
+source $HOME/.cargo/env
+
+# Verify installation
+rustc --version
+cargo --version
+```
+
+For Windows, download and run [rustup-init.exe](https://rustup.rs).
+
 ### Installation
 
 #### From Source
