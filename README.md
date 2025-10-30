@@ -504,6 +504,50 @@ See `Cargo.toml` for full dependency list.
 
 ## Troubleshooting
 
+### Binary Not Found After Building
+
+**Problem**: `cargo build --release` completes but no binary in `target/release/`
+
+**Cause**: You have `CARGO_TARGET_DIR` environment variable set, which redirects build output.
+
+**Solution**:
+
+```bash
+# Check if CARGO_TARGET_DIR is set
+echo $CARGO_TARGET_DIR
+
+# If set, your binary is at:
+ls -lh $CARGO_TARGET_DIR/release/raibid-cli
+
+# Option 1: Copy to expected location
+mkdir -p target/release
+cp $CARGO_TARGET_DIR/release/raibid-cli target/release/
+
+# Option 2: Unset and rebuild
+unset CARGO_TARGET_DIR
+cargo build --release
+
+# Option 3: Build with explicit target dir
+cargo build --release --target-dir ./target
+```
+
+### Cargo Not Found
+
+**Problem**: `cargo: command not found`
+
+**Solution**: Install Rust and add to PATH
+
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Reload shell
+source $HOME/.cargo/env
+
+# Verify
+cargo --version
+```
+
 ### TUI Not Rendering Properly
 
 ```bash
