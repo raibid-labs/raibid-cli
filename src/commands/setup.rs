@@ -1,13 +1,13 @@
 //! Setup command implementation
 //!
 //! Implements the setup command for infrastructure components.
-//! Currently supports real k3s installation, with mock implementations for other components.
+//! Real implementations: k3s, Gitea, Redis. Mock implementations: KEDA, Flux.
 
 use anyhow::Result;
 use colored::Colorize;
 use std::thread;
 use std::time::Duration;
-use crate::infrastructure::K3sInstaller;
+use crate::infrastructure::{K3sInstaller, GiteaInstaller, RedisInstaller};
 
 /// Infrastructure component that can be set up
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -123,6 +123,8 @@ fn setup_component(component: Component) -> Result<()> {
     // Run actual setup or simulation based on component
     match component {
         Component::K3s => setup_k3s_real()?,
+        Component::Gitea => setup_gitea_real()?,
+        Component::Redis => setup_redis_real()?,
         _ => simulate_setup(component)?,
     }
 
@@ -302,6 +304,179 @@ fn setup_k3s_real() -> Result<()> {
 
     // Cleanup on success
     installer.cleanup()?;
+
+    println!();
+    Ok(())
+}
+
+/// Real Gitea installation implementation
+fn setup_gitea_real() -> Result<()> {
+    println!("{}", "Installing Gitea via Helm...".bold());
+
+    // Create runtime for async operations
+    let runtime = tokio::runtime::Runtime::new()?;
+
+    // Create installer
+    let installer = GiteaInstaller::new()?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Check prerequisites
+        print!("  {} Checking prerequisites... ", "→".blue());
+        installer.check_kubectl()?;
+        println!("{}", "done".green());
+
+        // Install Helm if needed
+        print!("  {} Installing Helm if needed... ", "→".blue());
+        if installer.check_helm().is_err() {
+            installer.install_helm()?;
+        }
+        println!("{}", "done".green());
+
+        // Create namespace
+        print!("  {} Creating Gitea namespace... ", "→".blue());
+        installer.create_namespace()?;
+        println!("{}", "done".green());
+
+        // Add Helm repository
+        print!("  {} Adding Gitea Helm repository... ", "→".blue());
+        installer.add_helm_repo()?;
+        println!("{}", "done".green());
+
+        // Deploy Helm chart
+        print!("  {} Deploying Gitea Helm chart (this may take several minutes)... ", "→".blue());
+        installer.deploy_helm_chart()?;
+        println!("{}", "done".green());
+
+        // Wait for pods to be ready
+        print!("  {} Waiting for Gitea pods to be ready... ", "→".blue());
+        installer.wait_for_ready()?;
+        println!("{}", "done".green());
+
+        // Validate installation
+        print!("  {} Validating installation... ", "→".blue());
+        installer.validate_installation()?;
+        println!("{}", "done".green());
+
+        // Get service info
+        print!("  {} Getting service information... ", "→".blue());
+        let service_info = installer.get_service_info()?;
+        println!("{}", "done".green());
+
+        // Print access information
+        println!();
+        println!("{}", "Gitea Access Information:".bold().cyan());
+        println!("  {} URL: {}", "→".blue(), service_info.access_url().bold().green());
+
+        let (admin_user, admin_password) = installer.get_credentials();
+        println!("  {} Admin username: {}", "→".blue(), admin_user.bold().yellow());
+        println!("  {} Admin password: {}", "→".blue(), admin_password.bold().yellow());
+        println!();
+        println!("{}", "⚠ Please save these credentials securely!".yellow().bold());
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.rollback() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
+
+    // Cleanup on success
+    installer.cleanup()?;
+
+    println!();
+    Ok(())
+}
+
+/// Real Redis installation implementation
+fn setup_redis_real() -> Result<()> {
+    println!("{}", "Installing Redis with Helm...".bold());
+
+    // Create installer
+    let mut installer = RedisInstaller::new()?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Add Helm repository
+        print!("  {} Adding Bitnami Helm repository... ", "→".blue());
+        installer.add_helm_repo()?;
+        println!("{}", "done".green());
+
+        // Create namespace
+        print!("  {} Creating Redis namespace... ", "→".blue());
+        installer.create_namespace()?;
+        println!("{}", "done".green());
+
+        // Deploy Redis
+        print!("  {} Deploying Redis Helm chart... ", "→".blue());
+        installer.deploy_redis()?;
+        println!("{}", "done".green());
+
+        // Wait for Redis to be ready
+        print!("  {} Waiting for Redis to be ready... ", "→".blue());
+        installer.wait_for_ready()?;
+        println!("{}", "done".green());
+
+        // Initialize Redis Streams
+        print!("  {} Initializing Redis Streams... ", "→".blue());
+        installer.initialize_streams()?;
+        println!("{}", "done".green());
+
+        // Validate installation
+        print!("  {} Validating Redis installation... ", "→".blue());
+        installer.validate()?;
+        println!("{}", "done".green());
+
+        // Save connection credentials
+        let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/root"));
+        let creds_path = home.join(".raibid").join("redis-credentials.json");
+        if let Some(parent) = creds_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        print!("  {} Saving connection credentials... ", "→".blue());
+        installer.save_credentials(&creds_path)?;
+        println!("{}", "done".green());
+
+        // Display connection info
+        let conn_info = installer.get_connection_info()?;
+        println!();
+        println!("{}", "Redis connection details:".bold().green());
+        println!("  {} Host: {}", "→".blue(), conn_info.host.bold());
+        println!("  {} Port: {}", "→".blue(), conn_info.port.to_string().bold());
+        println!("  {} Namespace: {}", "→".blue(), conn_info.namespace.bold());
+        println!("  {} Credentials saved to: {}", "→".blue(), creds_path.display().to_string().bold());
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.uninstall() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
 
     println!();
     Ok(())
