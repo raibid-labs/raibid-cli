@@ -36,10 +36,16 @@ pub struct Config {
 }
 
 impl Config {
-    /// Load configuration (temporarily returns default config)
-    /// Full implementation will be completed in another issue
+    /// Load configuration from all sources
+    ///
+    /// This loads configuration from multiple sources in order of precedence:
+    /// 1. Environment variables (RAIBID_*)
+    /// 2. Local file (./raibid.yaml)
+    /// 3. User file (~/.config/raibid/config.yaml)
+    /// 4. System file (/etc/raibid/config.yaml)
+    /// 5. Default values
     pub fn load() -> Result<Self> {
-        Ok(Config::default())
+        crate::config::loader::load_config()
     }
 }
 

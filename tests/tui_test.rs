@@ -3,7 +3,7 @@
 //! These tests verify the TUI components without actually launching
 //! the terminal interface.
 
-use raibid_cli::tui::{App, AppConfig, MockDataConfig};
+use raibid_cli::tui::{App, AppConfig};
 use std::time::Duration;
 
 #[test]
