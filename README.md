@@ -8,13 +8,23 @@ A terminal-based management interface for running ephemeral, auto-scaling CI/CD 
 
 ## Features
 
+### Production Infrastructure 🚀
+
+- **k3s Cluster** - Automated Kubernetes cluster setup on ARM64 and x86_64
+- **Gitea + OCI Registry** - Self-hosted Git server with container registry
+- **Redis Streams** - Job queue management with consumer groups
+- **KEDA Autoscaling** - Event-driven autoscaling (scale 0→10 based on queue depth)
+- **Flux GitOps** - Continuous delivery from Gitea repository
+- **Real-time Status** - Live cluster monitoring via Kubernetes API
+
+### Developer Experience 💻
+
 - **Interactive TUI Dashboard** - Real-time monitoring with Ratatui-based terminal interface
-- **Infrastructure Management** - Setup and teardown commands for k3s, Gitea, Redis, KEDA, and Flux
 - **Job Management** - List, view, cancel, and retry CI jobs
 - **Agent Management** - Monitor and scale build agents dynamically
 - **Repository Mirroring** - Sync GitHub repositories to local Gitea instance
 - **Flexible Configuration** - YAML/TOML configuration with environment variable overrides
-- **Mock Implementation** - Fully functional TUI with simulated data for testing and development
+- **Comprehensive Testing** - 100+ unit tests with TDD workflow
 
 ## Quick Start
 
@@ -341,31 +351,49 @@ cargo build --release
 ```
 raibid-cli/
 ├── src/
-│   ├── cli/           # CLI argument parsing (clap)
-│   ├── commands/      # Command implementations
-│   │   ├── config.rs  # Configuration management
-│   │   ├── setup.rs   # Infrastructure setup
-│   │   ├── teardown.rs
-│   │   ├── status.rs
-│   │   ├── job.rs     # Job management
-│   │   ├── agent.rs   # Agent management
-│   │   └── mirror.rs  # Repository mirroring
-│   ├── config/        # Configuration loading and validation
-│   ├── tui/           # Terminal UI (Ratatui)
-│   │   ├── app.rs     # Application state
-│   │   ├── ui.rs      # UI rendering
-│   │   ├── events.rs  # Event handling
-│   │   └── mock_data.rs
-│   ├── lib.rs         # Library entry point
-│   └── main.rs        # Binary entry point
-├── tests/             # Integration tests
+│   ├── cli/              # CLI argument parsing (clap)
+│   ├── commands/         # Command implementations
+│   │   ├── config.rs     # Configuration management
+│   │   ├── setup.rs      # Infrastructure setup
+│   │   ├── teardown.rs   # Infrastructure teardown
+│   │   ├── status.rs     # Status checking
+│   │   ├── job.rs        # Job management
+│   │   ├── agent.rs      # Agent management
+│   │   └── mirror.rs     # Repository mirroring
+│   ├── config/           # Configuration loading and validation
+│   ├── infrastructure/   # Infrastructure provisioning
+│   │   ├── k3s.rs        # k3s cluster installer
+│   │   ├── gitea.rs      # Gitea + OCI registry installer
+│   │   ├── redis.rs      # Redis Streams installer
+│   │   ├── keda.rs       # KEDA autoscaler installer
+│   │   ├── flux.rs       # Flux GitOps installer
+│   │   ├── status.rs     # Real-time status checking
+│   │   ├── error.rs      # Error handling types
+│   │   ├── retry.rs      # Retry logic with backoff
+│   │   ├── rollback.rs   # Transaction-based rollback
+│   │   ├── preflight.rs  # Pre-flight validation
+│   │   └── healthcheck.rs # Health check utilities
+│   ├── tui/              # Terminal UI (Ratatui)
+│   │   ├── app.rs        # Application state
+│   │   ├── ui.rs         # UI rendering
+│   │   ├── events.rs     # Event handling
+│   │   └── mock_data.rs  # Mock data generator
+│   ├── lib.rs            # Library entry point
+│   └── main.rs           # Binary entry point
+├── tests/                # Integration tests
 │   ├── cli_test.rs
-│   ├── mock_commands_test.rs
-│   ├── tui_test.rs
 │   ├── config_test.rs
-│   └── additional_commands_test.rs
-├── docs/              # Documentation
-├── examples/          # Example configs
+│   ├── tui_test.rs
+│   ├── redis_test.rs
+│   ├── flux_test.rs
+│   ├── status_test.rs
+│   └── error_handling_test.rs
+├── docs/                 # Documentation
+│   ├── USER_GUIDE.md
+│   ├── gitea-installation.md
+│   ├── redis-deployment.md
+│   ├── keda-installation.md
+│   └── error-recovery.md
 └── Cargo.toml
 ```
 
@@ -376,6 +404,13 @@ raibid-cli/
 - `anyhow` - Error handling
 - `tracing` - Structured logging
 
+**Infrastructure:**
+- `kube` - Kubernetes API client
+- `k8s-openapi` - Kubernetes resource types
+- `tokio` - Async runtime
+- `reqwest` - HTTP client
+- `sha256` - Checksum verification
+
 **TUI:**
 - `ratatui` - Terminal UI framework
 - `crossterm` - Terminal manipulation
@@ -384,6 +419,7 @@ raibid-cli/
 - `serde` - Serialization framework
 - `serde_yaml` - YAML support
 - `toml` - TOML support
+- `serde_json` - JSON support
 
 **Display:**
 - `comfy-table` - ASCII table rendering
@@ -415,30 +451,38 @@ See `Cargo.toml` for full dependency list.
 
 ## Roadmap
 
-### Current Status: WS-01 Complete
+### ✅ Completed: WS-01 - CLI/TUI Application
 
 - ✅ CLI scaffolding with clap
-- ✅ Mock infrastructure commands
-- ✅ Ratatui TUI with 3-panel dashboard
+- ✅ Ratatui TUI with 4-tab dashboard (Jobs, Agents, Config, Logs)
 - ✅ Enhanced TUI widgets and navigation
 - ✅ Interactive controls and popups
 - ✅ Job, agent, and mirror commands
-- ✅ Configuration management
-- ✅ Comprehensive testing and documentation
+- ✅ Configuration management with multi-source loading
+- ✅ Comprehensive testing (100+ tests) and documentation
 
-### Next: WS-02 - API Server
+### ✅ Completed: WS-04 - Infrastructure Provisioning
+
+- ✅ k3s cluster installation with binary verification
+- ✅ Gitea deployment with OCI registry via Helm
+- ✅ Redis Streams for job queue management
+- ✅ KEDA autoscaler with Redis Streams trigger
+- ✅ Flux GitOps bootstrap with Gitea integration
+- ✅ Real-time status monitoring via Kubernetes API
+- ✅ Enhanced error handling with retry logic and rollback
+
+### 🔜 Next: WS-02 - API Server & Job Execution
 
 - API server implementation in Rust
-- Job queue management with Redis Streams
-- Kubernetes integration with kube-rs
-- RESTful API endpoints
+- Job dispatcher with Redis Streams
+- Agent lifecycle management
+- Build execution and caching
 
-### Future Workstreams
+### 📋 Future Workstreams
 
-- **WS-03**: Infrastructure automation
-- **WS-04**: CI agents implementation
-- **WS-05**: Repository mirroring
-- **WS-06**: Integration testing and deployment
+- **WS-03**: CI agent implementations (Rust, multi-language)
+- **WS-05**: Repository mirroring automation
+- **WS-06**: Integration testing and production deployment
 
 ## Troubleshooting
 
@@ -519,6 +563,7 @@ You may choose either license for your use.
 
 - **Documentation**: [docs/](docs/)
 - **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
+- **Orchestrator Guide**: [ORCHESTRATOR.md](ORCHESTRATOR.md) - Multi-agent development system
 - **GitHub Repository**: https://github.com/raibid-labs/raibid-cli
 - **Issue Tracker**: https://github.com/raibid-labs/raibid-cli/issues
 
@@ -526,5 +571,5 @@ You may choose either license for your use.
 
 **Built for developers, by developers. Optimized for NVIDIA DGX Spark.**
 
-*Last Updated: 2025-01-15*
-*Status: WS-01 Complete - CLI/TUI Application Functional*
+*Last Updated: 2025-10-30*
+*Status: WS-01 & WS-04 Complete - Production Infrastructure Ready* 🚀
