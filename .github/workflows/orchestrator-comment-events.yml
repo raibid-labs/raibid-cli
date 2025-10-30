@@ -12,12 +12,15 @@ jobs:
   check-for-answers:
     runs-on: ubuntu-latest
     # Only run for maintainer/owner comments or if comment has answer patterns
+    # Skip draft issues - they're handled by orchestrator-draft-enrichment.yml
     if: |
-      github.event.comment.author_association == 'OWNER' ||
-      github.event.comment.author_association == 'MEMBER' ||
-      contains(github.event.comment.body, 'A1:') ||
-      contains(github.event.comment.body, 'Answer') ||
-      contains(github.event.comment.body, '1.')
+      !contains(github.event.issue.labels.*.name, 'draft') &&
+      !contains(github.event.issue.labels.*.name, 'status:draft') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       contains(github.event.comment.body, 'A1:') ||
+       contains(github.event.comment.body, 'Answer') ||
+       contains(github.event.comment.body, '1.'))
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

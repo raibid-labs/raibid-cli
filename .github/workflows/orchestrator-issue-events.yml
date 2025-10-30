@@ -11,6 +11,10 @@ permissions:
 jobs:
   check-readiness:
     runs-on: ubuntu-latest
+    # Skip this workflow entirely for draft issues - they're handled by orchestrator-draft-enrichment.yml
+    if: |
+      !contains(github.event.issue.labels.*.name, 'draft') &&
+      !contains(github.event.issue.labels.*.name, 'status:draft')
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
