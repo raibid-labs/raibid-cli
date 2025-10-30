@@ -1,0 +1,123 @@
+name: Orchestrator - Draft Issue Enrichment
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-draft-and-enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check Draft Status
+        id: draft_check
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./.github/scripts/check-draft-status.sh
+          ./.github/scripts/check-draft-status.sh
+
+      - name: Spawn Enrichment Agent
+        if: steps.draft_check.outputs.is_draft == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # Check if enrichment agent already active
+          EXISTING_ENRICHMENT=$(gh issue view $ISSUE_NUMBER --json comments --jq '.comments[].body' | grep "ENRICHMENT-AGENT-ACTIVE" || true)
+
+          if [ -n "$EXISTING_ENRICHMENT" ]; then
+            echo "Enrichment agent already active on this issue"
+            exit 0
+          fi
+
+          # Post enrichment agent spawn trigger
+          gh issue comment $ISSUE_NUMBER --body "🤖 **ORCHESTRATOR-SPAWN-ENRICHMENT-AGENT**
+
+**Issue**: #${ISSUE_NUMBER}
+**Type**: draft-enrichment
+**Status**: ready-for-enrichment
+**Timestamp**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+---
+
+<!-- ENRICHMENT-AGENT-ACTIVE -->
+<!-- ORCHESTRATOR-STATE {\"agent_type\":\"enrichment\",\"issue\":${ISSUE_NUMBER},\"spawned_at\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"} -->
+
+**Instructions for Enrichment Agent:**
+
+**Your role is to improve this draft issue to make it ready for implementation by development agents.**
+
+**Tasks:**
+1. **Analyze** the current issue content
+2. **Identify gaps** - missing requirements, unclear acceptance criteria, missing context
+3. **Ask clarifying questions** - add a \"## Clarifying Questions\" section if needed
+4. **Enrich content** - suggest improvements to make the issue more actionable
+5. **Add structure** - ensure proper sections (Summary, Requirements, Acceptance Criteria, etc.)
+6. **Iterate** - respond to user feedback and continue improving until draft label is removed
+
+**Guidelines:**
+- Keep questions focused and specific
+- Suggest concrete acceptance criteria
+- Identify dependencies on other work
+- Flag potential technical challenges
+- Recommend test scenarios
+- Don't start implementation - only prepare the issue
+
+**When complete:**
+The issue will be ready when:
+- All required sections are present and clear
+- Acceptance criteria are specific and testable
+- User removes the \"draft\" label
+- All clarifying questions are answered
+
+**Format your updates as comments on this issue.**
+
+---
+*Orchestrator Draft Enrichment System v1.0*"
+
+      - name: Add Enrichment Label
+        if: steps.draft_check.outputs.is_draft == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --add-label "enrichment:active" || true
+
+      - name: Notify Draft Removed
+        if: |
+          steps.draft_check.outputs.is_draft == 'false' &&
+          github.event.action == 'unlabeled'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if draft was just removed
+          UNLABELED=$(echo '${{ github.event.label.name }}' | grep -i draft || true)
+
+          if [ -n "$UNLABELED" ]; then
+            gh issue comment ${{ github.event.issue.number }} --body "✅ **Draft Status Removed - Enrichment Complete**
+
+The draft label has been removed. This issue is now ready for implementation workflow.
+
+**Next Steps:**
+1. Orchestrator will check for clarifying questions
+2. If no questions or all answered, a development agent will be spawned
+3. Agent will follow TDD workflow and create PR
+
+**Status**: ENRICHMENT COMPLETE → READY FOR IMPLEMENTATION
+
+---
+*Orchestrator Event-Driven System v1.0*"
+
+            gh issue edit ${{ github.event.issue.number }} \
+              --remove-label "enrichment:active" || true
+          fi

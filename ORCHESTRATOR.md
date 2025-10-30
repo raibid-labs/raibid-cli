@@ -22,6 +22,7 @@ The orchestrator runs automatically via GitHub Actions. No manual setup needed.
 **To trigger agent work:**
 
 1. Create or update an issue
+   - **Optional**: Add `draft` label to iterate on requirements first (see [Draft Issue Enrichment](#draft-issue-enrichment))
 2. If the agent asks clarifying questions, answer them in a comment using numbered list format:
 
 ```markdown
@@ -194,19 +195,97 @@ EOF
 └──────┬──────┘
        │
        ▼
-┌─────────────────┐
-│ Agent Analyzes  │
-└──────┬──────────┘
+┌──────────────┐
+│ Has "draft"  │
+│   label?     │
+└──────┬───────┘
        │
-       ▼
-┌──────────────────┐
-│ Questions Asked? │
-└──────┬───────────┘
-       │
-       ├─YES──► Wait for Answers ──► Orchestrator Spawns Agent
-       │
-       └─NO───► Direct Implementation ──► Agent Creates PR
+       ├─YES──► Enrichment Agent ──► Iterate with User ──► Draft Removed
+       │        (improve issue)      (ask questions,       │
+       │                             add structure)        │
+       │                                                   │
+       └─NO───► Agent Analyzes ◄──────────────────────────┘
+                │
+                ▼
+         ┌──────────────────┐
+         │ Questions Asked? │
+         └──────┬───────────┘
+                │
+                ├─YES──► Wait for Answers ──► Orchestrator Spawns Agent
+                │
+                └─NO───► Direct Implementation ──► Agent Creates PR
 ```
+
+### Draft Issue Enrichment
+
+**Draft issues** allow you to iterate with an enrichment agent to improve issue quality before implementation begins.
+
+#### When to Use Draft Issues
+
+Create an issue with the `draft` or `status:draft` label when:
+- Requirements are incomplete or unclear
+- You want agent help structuring the issue
+- You need to explore requirements interactively
+- You want clarifying questions asked before coding starts
+
+#### Draft Workflow
+
+1. **Create draft issue** - Add `draft` or `status:draft` label
+2. **Enrichment agent spawns** - Automatically via `.github/workflows/orchestrator-draft-enrichment.yml`
+3. **Agent analyzes** - Reviews issue content, identifies gaps
+4. **Agent enriches** - Adds structure, asks questions, suggests improvements
+5. **User responds** - Answer questions, provide clarifications
+6. **Iterate** - Agent continues improving issue based on feedback
+7. **Draft removed** - User removes draft label when satisfied
+8. **Normal workflow** - Issue enters standard implementation workflow
+
+#### Enrichment Agent Tasks
+
+The enrichment agent will:
+
+- **Analyze gaps**: Missing requirements, unclear acceptance criteria, insufficient context
+- **Ask clarifying questions**: Specific, actionable questions to fill gaps
+- **Suggest structure**: Add sections like Summary, Requirements, Acceptance Criteria, Dependencies
+- **Enrich content**: Expand vague requirements, suggest test scenarios, identify edge cases
+- **Iterate**: Respond to user feedback until issue is implementation-ready
+
+**Important**: Enrichment agents do NOT implement code. They only prepare issues for implementation agents.
+
+#### Example Draft Enrichment
+
+**Initial draft**:
+```markdown
+# Add User Authentication
+
+We need authentication for the app.
+```
+
+**After enrichment** (iteration 1):
+- Agent adds structure (Summary, Requirements, Acceptance Criteria)
+- Agent posts clarifying questions:
+  - Authentication method (OAuth, JWT, session cookies)?
+  - Password requirements?
+  - Session duration?
+  - Multi-factor auth needed?
+
+**User answers**, agent updates issue with specifics
+
+**After enrichment** (iteration 2):
+- Complete requirements based on answers
+- Specific, testable acceptance criteria
+- API endpoint suggestions
+- Test scenarios
+- Technical considerations
+
+**User removes draft label** → Implementation agent spawned
+
+See **[ISSUE_ENRICHMENT_AGENT.md](docs/ISSUE_ENRICHMENT_AGENT.md)** for complete guide with full examples.
+
+#### Labels for Draft Issues
+
+- **`draft`** or **`status:draft`** - Issue is in draft state
+- **`enrichment:active`** - Enrichment agent is currently working
+- **`waiting:answers`** - Clarifying questions need answering (used after draft removed)
 
 ### Agent Workflow
 
@@ -335,6 +414,7 @@ From raibid-cli development:
 
 - **Event-Driven Architecture**: `docs/EVENT_DRIVEN_ORCHESTRATION.md`
 - **Agent Implementation**: `docs/ORCHESTRATOR_AGENT.md`
+- **Draft Issue Enrichment**: `docs/ISSUE_ENRICHMENT_AGENT.md`
 - **Testing Guide**: `docs/TESTING_EVENT_DRIVEN_ORCHESTRATION.md`
 - **Status Tracking**: `docs/ORCHESTRATOR_STATUS.md`
 

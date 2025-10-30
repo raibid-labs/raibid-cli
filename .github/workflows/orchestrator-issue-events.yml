@@ -15,7 +15,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Check Draft Status
+        id: draft_check
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./.github/scripts/check-draft-status.sh
+          ./.github/scripts/check-draft-status.sh
+
+      - name: Skip if Draft
+        if: steps.draft_check.outputs.is_draft == 'true'
+        run: |
+          echo "⏭️ Skipping readiness check - issue is in draft state"
+          echo "Draft issues are handled by the enrichment workflow"
+          exit 0
+
       - name: Check Issue Readiness
+        if: steps.draft_check.outputs.is_draft == 'false'
         id: check
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -25,7 +42,7 @@ jobs:
           ./.github/scripts/check-issue-readiness.sh
 
       - name: Add Waiting Label
-        if: steps.check.outputs.ready == 'false'
+        if: steps.draft_check.outputs.is_draft == 'false' && steps.check.outputs.ready == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -34,7 +51,7 @@ jobs:
             --remove-label "ready:work" || true
 
       - name: Post Paused Comment
-        if: steps.check.outputs.ready == 'false' && steps.check.outputs.unanswered_count != ''
+        if: steps.draft_check.outputs.is_draft == 'false' && steps.check.outputs.ready == 'false' && steps.check.outputs.unanswered_count != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -59,7 +76,7 @@ jobs:
             *Orchestrator Event-Driven System v1.0*"
 
       - name: Update to Ready Label
-        if: steps.check.outputs.ready == 'true'
+        if: steps.draft_check.outputs.is_draft == 'false' && steps.check.outputs.ready == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -68,7 +85,7 @@ jobs:
             --remove-label "waiting:answers" || true
 
       - name: Spawn Agent
-        if: steps.check.outputs.ready == 'true'
+        if: steps.draft_check.outputs.is_draft == 'false' && steps.check.outputs.ready == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
