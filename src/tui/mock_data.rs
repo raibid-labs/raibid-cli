@@ -65,22 +65,36 @@ impl MockJob {
     /// Generate a random mock job
     pub fn random(rng: &mut impl Rng) -> Self {
         let repos = [
-            "backend-api",
-            "frontend-web",
-            "mobile-app",
-            "ml-pipeline",
-            "data-service",
+            "raibid-cli",
+            "raibid-server",
+            "dgx-agent-rust",
+            "flux-config",
+            "k3s-bootstrap",
+            "gitea-mirror",
+            "redis-queue",
+            "keda-autoscaler",
+            "build-cache-service",
+            "artifact-registry",
             "auth-service",
-            "payment-gateway",
-            "notification-service",
+            "monitoring-stack",
+            "container-builder",
+            "test-harness",
+            "deployment-operator",
         ];
 
         let branches = [
             "main",
             "develop",
-            "feature/new-api",
+            "feature/websocket-api",
+            "feature/keda-integration",
             "fix/memory-leak",
-            "release/v2.0",
+            "fix/cache-invalidation",
+            "release/v1.0.0",
+            "release/v2.1.0",
+            "hotfix/security-patch",
+            "refactor/async-runtime",
+            "perf/reduce-allocations",
+            "docs/api-reference",
         ];
 
         let statuses = [
