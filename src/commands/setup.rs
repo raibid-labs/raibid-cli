@@ -1,13 +1,13 @@
 //! Setup command implementation
 //!
 //! Implements the setup command for infrastructure components.
-//! Real implementations: k3s, Gitea, Redis. Mock implementations: KEDA, Flux.
+//! Real implementations: k3s, Gitea, Redis, KEDA, Flux.
 
 use anyhow::Result;
 use colored::Colorize;
 use std::thread;
 use std::time::Duration;
-use crate::infrastructure::{K3sInstaller, GiteaInstaller, RedisInstaller};
+use crate::infrastructure::{K3sInstaller, GiteaInstaller, RedisInstaller, KedaInstaller, FluxInstaller, FluxConfig};
 
 /// Infrastructure component that can be set up
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -125,6 +125,8 @@ fn setup_component(component: Component) -> Result<()> {
         Component::K3s => setup_k3s_real()?,
         Component::Gitea => setup_gitea_real()?,
         Component::Redis => setup_redis_real()?,
+        Component::Keda => setup_keda_real()?,
+        Component::Flux => setup_flux_real()?,
         _ => simulate_setup(component)?,
     }
 
@@ -368,8 +370,30 @@ fn setup_gitea_real() -> Result<()> {
         let (admin_user, admin_password) = installer.get_credentials();
         println!("  {} Admin username: {}", "→".blue(), admin_user.bold().yellow());
         println!("  {} Admin password: {}", "→".blue(), admin_password.bold().yellow());
+
+        // Save credentials for Flux to use later
+        let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/root"));
+        let creds_dir = home.join(".raibid");
+        std::fs::create_dir_all(&creds_dir)?;
+
+        let creds_path = creds_dir.join("gitea-credentials.json");
+        let creds = serde_json::json!({
+            "admin_username": admin_user,
+            "admin_password": admin_password,
+            "url": service_info.access_url(),
+        });
+        std::fs::write(&creds_path, serde_json::to_string_pretty(&creds)?)?;
+
+        // Set file permissions to owner-only
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&creds_path, std::fs::Permissions::from_mode(0o600))?;
+        }
+
         println!();
-        println!("{}", "⚠ Please save these credentials securely!".yellow().bold());
+        println!("{}", "⚠ Credentials saved securely for Flux integration".yellow().bold());
+        println!("  {} {}", "→".blue(), creds_path.display());
 
         Ok(())
     })();
@@ -474,6 +498,221 @@ fn setup_redis_real() -> Result<()> {
 
         return Err(e);
     }
+
+    println!();
+    Ok(())
+}
+
+/// Real KEDA installation implementation
+fn setup_keda_real() -> Result<()> {
+    println!("{}", "Installing KEDA autoscaler...".bold());
+
+    // Create installer
+    let installer = KedaInstaller::new()?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Check Helm
+        print!("  {} Checking Helm... ", "→".blue());
+        installer.check_helm()?;
+        println!("{}", "done".green());
+
+        // Add Helm repository
+        print!("  {} Adding KEDA Helm repository... ", "→".blue());
+        installer.add_helm_repo()?;
+        println!("{}", "done".green());
+
+        // Create namespace
+        print!("  {} Creating KEDA namespace... ", "→".blue());
+        installer.create_namespace()?;
+        println!("{}", "done".green());
+
+        // Deploy KEDA
+        print!("  {} Deploying KEDA operators... ", "→".blue());
+        installer.deploy_keda()?;
+        println!("{}", "done".green());
+
+        // Wait for KEDA to be ready
+        print!("  {} Waiting for KEDA to be ready... ", "→".blue());
+        installer.wait_for_ready()?;
+        println!("{}", "done".green());
+
+        // Validate installation
+        print!("  {} Validating KEDA installation... ", "→".blue());
+        installer.validate()?;
+        println!("{}", "done".green());
+
+        // Create ScaledObject for Redis Streams
+        print!("  {} Creating ScaledObject for Redis Streams... ", "→".blue());
+        installer.create_scaled_object()?;
+        println!("{}", "done".green());
+
+        // Display KEDA status
+        println!();
+        println!("{}", "KEDA Status:".bold().cyan());
+        match installer.get_scaled_object_status() {
+            Ok(status) => {
+                for line in status.lines() {
+                    println!("  {}", line);
+                }
+            }
+            Err(e) => {
+                println!("  {} Failed to get status: {}", "⚠".yellow(), e);
+            }
+        }
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.uninstall() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
+
+    println!();
+    Ok(())
+}
+
+/// Real Flux installation implementation
+fn setup_flux_real() -> Result<()> {
+    println!("{}", "Installing Flux GitOps...".bold());
+
+    // Create runtime for async operations
+    let runtime = tokio::runtime::Runtime::new()?;
+
+    // Get Gitea credentials from saved file
+    let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/root"));
+    let gitea_creds_path = home.join(".raibid").join("gitea-credentials.json");
+
+    // Read Gitea credentials
+    let (gitea_username, gitea_password) = if gitea_creds_path.exists() {
+        let contents = std::fs::read_to_string(&gitea_creds_path)?;
+        let creds: serde_json::Value = serde_json::from_str(&contents)?;
+
+        let username = creds["admin_username"]
+            .as_str()
+            .unwrap_or("raibid-admin")
+            .to_string();
+        let password = creds["admin_password"]
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("Gitea password not found in credentials file"))?
+            .to_string();
+
+        (username, password)
+    } else {
+        println!(
+            "{} Gitea credentials not found at {}",
+            "⚠".yellow(),
+            gitea_creds_path.display()
+        );
+        println!("  {} Please run 'raibid-cli setup gitea' first", "→".blue());
+        return Err(anyhow::anyhow!("Gitea must be installed before Flux"));
+    };
+
+    // Create Flux config
+    let config = FluxConfig {
+        password: gitea_password,
+        username: gitea_username,
+        ..Default::default()
+    };
+
+    // Create installer
+    let installer = FluxInstaller::with_config(config)?;
+
+    // Run installation with rollback on failure
+    let result = (|| -> Result<()> {
+        // Check if Flux CLI is installed
+        print!("  {} Checking for Flux CLI... ", "→".blue());
+        let flux_installed = installer.check_flux_cli()?;
+
+        if flux_installed {
+            println!("{}", "already installed".green());
+        } else {
+            println!("{}", "not found".yellow());
+
+            // Download Flux CLI
+            print!("  {} Downloading Flux CLI... ", "→".blue());
+            let archive_path = runtime.block_on(installer.download_flux())?;
+            println!("{}", "done".green());
+
+            // Download and verify checksums
+            print!("  {} Verifying checksum... ", "→".blue());
+            let checksums = runtime.block_on(installer.download_checksums())?;
+            installer.verify_checksum(&archive_path, &checksums)?;
+            println!("{}", "done".green());
+
+            // Install Flux CLI
+            print!("  {} Installing Flux CLI... ", "→".blue());
+            installer.install_flux_cli(&archive_path)?;
+            println!("{}", "done".green());
+        }
+
+        // Bootstrap Flux with Gitea
+        print!("  {} Bootstrapping Flux with Gitea... ", "→".blue());
+        installer.bootstrap_flux()?;
+        println!("{}", "done".green());
+
+        // Configure image automation
+        print!("  {} Configuring image automation... ", "→".blue());
+        installer.configure_image_automation()?;
+        println!("{}", "done".green());
+
+        // Configure notifications
+        print!("  {} Configuring notification controller... ", "→".blue());
+        installer.configure_notifications()?;
+        println!("{}", "done".green());
+
+        // Validate installation
+        print!("  {} Validating Flux installation... ", "→".blue());
+        installer.validate_installation()?;
+        println!("{}", "done".green());
+
+        // Get and display status
+        println!();
+        println!("{}", "Flux Status:".bold().cyan());
+        match installer.get_status() {
+            Ok(status) => {
+                for line in status.lines() {
+                    println!("  {}", line);
+                }
+            }
+            Err(e) => {
+                println!("  {} Failed to get status: {}", "⚠".yellow(), e);
+            }
+        }
+
+        Ok(())
+    })();
+
+    // Handle errors with rollback
+    if let Err(e) = result {
+        println!("{}", "failed".red());
+        println!();
+        println!("{} Installation failed: {}", "✗".bold().red(), e);
+        println!("{} Rolling back changes...", "→".yellow());
+
+        if let Err(rollback_err) = installer.rollback() {
+            println!("{} Rollback failed: {}", "✗".bold().red(), rollback_err);
+        } else {
+            println!("{} Rollback completed", "✓".green());
+        }
+
+        return Err(e);
+    }
+
+    // Cleanup on success
+    installer.cleanup()?;
 
     println!();
     Ok(())
