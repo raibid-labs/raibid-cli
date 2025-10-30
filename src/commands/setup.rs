@@ -313,9 +313,6 @@ fn setup_k3s_real() -> Result<()> {
 fn setup_gitea_real() -> Result<()> {
     println!("{}", "Installing Gitea via Helm...".bold());
 
-    // Create runtime for async operations
-    let runtime = tokio::runtime::Runtime::new()?;
-
     // Create installer
     let installer = GiteaInstaller::new()?;
 
