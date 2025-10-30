@@ -1,6 +1,7 @@
 mod cli;
 mod commands;
 mod config;
+mod infrastructure;
 mod tui;
 
 use anyhow::Result;
@@ -33,6 +34,24 @@ fn main() -> Result<()> {
         Some(cli::Commands::Tui) => {
             // Launch TUI dashboard
             tui::launch()
+        }
+        Some(cli::Commands::Setup { component }) => {
+            // Handle setup command
+            let comp = component.parse()?;
+            commands::setup::execute(comp)
+        }
+        Some(cli::Commands::Teardown { component }) => {
+            // Handle teardown command
+            let comp = component.parse()?;
+            commands::teardown::execute(comp)
+        }
+        Some(cli::Commands::Status { component }) => {
+            // Handle status command
+            let comp = match component {
+                Some(c) => Some(c.parse()?),
+                None => None,
+            };
+            commands::status::execute(comp)
         }
     }
 }
