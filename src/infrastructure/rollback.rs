@@ -3,7 +3,6 @@
 //! This module provides comprehensive rollback mechanisms for infrastructure installations
 //! with transaction-like behavior and detailed cleanup tracking.
 
-use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
 use crate::infrastructure::error::{InfraError, InfraResult};

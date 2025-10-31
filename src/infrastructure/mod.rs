@@ -21,27 +21,14 @@ pub mod rollback;
 pub mod healthcheck;
 
 pub use k3s::K3sInstaller;
-pub use gitea::{GiteaInstaller, GiteaConfig, ServiceType};
-pub use redis::{RedisInstaller, RedisConfig, RedisConnectionInfo, RedisStreamsConfig};
-pub use keda::{KedaInstaller, KedaConfig, ScaledObjectConfig, TargetKind};
+pub use gitea::GiteaInstaller;
+pub use redis::RedisInstaller;
+pub use keda::KedaInstaller;
 pub use flux::{FluxInstaller, FluxConfig};
 pub use status::{
     ComponentStatusChecker, K3sStatusChecker, GiteaStatusChecker,
     RedisStatusChecker, KedaStatusChecker, FluxStatusChecker,
-    ComponentHealth, ComponentStatus, PodStatus, ResourceUsage,
-    VersionInfo, EndpointInfo,
+    ComponentHealth, ComponentStatus, ResourceUsage,
 };
 
 // Error handling exports
-pub use error::{InfraError, InfraResult, InstallPhase, HelmOperation, ValidationError, ErrorContext};
-pub use retry::{RetryConfig, retry_with_backoff, retry_with_backoff_async, poll_until, poll_until_async};
-pub use preflight::{
-    SystemRequirements, PreFlightValidator, PreFlightResult,
-    k3s_requirements, gitea_requirements, redis_requirements,
-    keda_requirements, flux_requirements,
-};
-pub use rollback::{RollbackManager, RollbackContext, RollbackAction};
-pub use healthcheck::{
-    HealthStatus, HealthCheckResult, CheckResult,
-    K3sHealthChecker, HelmHealthChecker,
-};
