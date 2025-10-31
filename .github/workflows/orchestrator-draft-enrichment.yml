@@ -41,52 +41,49 @@ jobs:
           fi
 
           # Post enrichment agent spawn trigger
-          gh issue comment $ISSUE_NUMBER --body "$(cat <<EOF
-🤖 **ORCHESTRATOR-SPAWN-ENRICHMENT-AGENT**
+          gh issue comment $ISSUE_NUMBER --body \
+            "🤖 **ORCHESTRATOR-SPAWN-ENRICHMENT-AGENT**
 
-**Issue**: #${ISSUE_NUMBER}
-**Type**: draft-enrichment
-**Status**: ready-for-enrichment
-**Timestamp**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            **Issue**: #${ISSUE_NUMBER}
+            **Type**: draft-enrichment
+            **Status**: ready-for-enrichment
+            **Timestamp**: $(date -u +\"%Y-%m-%dT%H:%M:%SZ\")
 
----
+            ---
 
-<!-- ENRICHMENT-AGENT-ACTIVE -->
-<!-- ORCHESTRATOR-STATE {"agent_type":"enrichment","issue":${ISSUE_NUMBER},"spawned_at":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"} -->
+            <!-- ENRICHMENT-AGENT-ACTIVE -->
 
-**Instructions for Enrichment Agent:**
+            **Instructions for Enrichment Agent:**
 
-**Your role is to improve this draft issue to make it ready for implementation by development agents.**
+            **Your role is to improve this draft issue to make it ready for implementation by development agents.**
 
-**Tasks:**
-1. **Analyze** the current issue content
-2. **Identify gaps** - missing requirements, unclear acceptance criteria, missing context
-3. **Ask clarifying questions** - add a "## Clarifying Questions" section if needed
-4. **Enrich content** - suggest improvements to make the issue more actionable
-5. **Add structure** - ensure proper sections (Summary, Requirements, Acceptance Criteria, etc.)
-6. **Iterate** - respond to user feedback and continue improving until draft label is removed
+            **Tasks:**
+            1. **Analyze** the current issue content
+            2. **Identify gaps** - missing requirements, unclear acceptance criteria, missing context
+            3. **Ask clarifying questions** - add a ## Clarifying Questions section if needed
+            4. **Enrich content** - suggest improvements to make the issue more actionable
+            5. **Add structure** - ensure proper sections (Summary, Requirements, Acceptance Criteria, etc.)
+            6. **Iterate** - respond to user feedback and continue improving until draft label is removed
 
-**Guidelines:**
-- Keep questions focused and specific
-- Suggest concrete acceptance criteria
-- Identify dependencies on other work
-- Flag potential technical challenges
-- Recommend test scenarios
-- Don't start implementation - only prepare the issue
+            **Guidelines:**
+            - Keep questions focused and specific
+            - Suggest concrete acceptance criteria
+            - Identify dependencies on other work
+            - Flag potential technical challenges
+            - Recommend test scenarios
+            - Do not start implementation - only prepare the issue
 
-**When complete:**
-The issue will be ready when:
-- All required sections are present and clear
-- Acceptance criteria are specific and testable
-- User removes the "draft" label
-- All clarifying questions are answered
+            **When complete:**
+            The issue will be ready when:
+            - All required sections are present and clear
+            - Acceptance criteria are specific and testable
+            - User removes the draft label
+            - All clarifying questions are answered
 
-**Format your updates as comments on this issue.**
+            **Format your updates as comments on this issue.**
 
----
-*Orchestrator Draft Enrichment System v1.0*
-EOF
-)"
+            ---
+            *Orchestrator Draft Enrichment System v1.0*"
 
       - name: Add Enrichment Label
         if: steps.draft_check.outputs.is_draft == 'true'
@@ -107,22 +104,20 @@ EOF
           UNLABELED=$(echo '${{ github.event.label.name }}' | grep -i draft || true)
 
           if [ -n "$UNLABELED" ]; then
-            gh issue comment ${{ github.event.issue.number }} --body "$(cat <<EOF
-✅ **Draft Status Removed - Enrichment Complete**
+            gh issue comment ${{ github.event.issue.number }} --body \
+              "✅ **Draft Status Removed - Enrichment Complete**
 
-The draft label has been removed. This issue is now ready for implementation workflow.
+              The draft label has been removed. This issue is now ready for implementation workflow.
 
-**Next Steps:**
-1. Orchestrator will check for clarifying questions
-2. If no questions or all answered, a development agent will be spawned
-3. Agent will follow TDD workflow and create PR
+              **Next Steps:**
+              1. Orchestrator will check for clarifying questions
+              2. If no questions or all answered, a development agent will be spawned
+              3. Agent will follow TDD workflow and create PR
 
-**Status**: ENRICHMENT COMPLETE → READY FOR IMPLEMENTATION
+              **Status**: ENRICHMENT COMPLETE → READY FOR IMPLEMENTATION
 
----
-*Orchestrator Event-Driven System v1.0*
-EOF
-)"
+              ---
+              *Orchestrator Event-Driven System v1.0*"
 
             gh issue edit ${{ github.event.issue.number }} \
               --remove-label "enrichment:active" || true
