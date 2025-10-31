@@ -61,9 +61,9 @@ jobs:
             1. **Analyze** the current issue content using gh issue view
             2. **Identify gaps** - missing requirements, unclear acceptance criteria, missing context
             3. **Update the issue body** using gh issue edit --body - add proper structure with sections: Summary, Requirements, Acceptance Criteria, Technical Notes, etc.
-            4. **Ask clarifying questions** - post comments with specific questions if requirements are unclear
-            5. **Iterate** - when user answers questions, update the issue body again with refined requirements
-            6. **Remove draft label** when complete using gh issue edit --remove-label draft
+            4. **Ask clarifying questions** - post comments with specific questions if requirements are unclear (optional)
+            5. **Remove draft label immediately** using gh issue edit --remove-label draft - enrichment is complete even if questions remain
+            6. **Post completion comment** - note that issue is ready for implementation, questions can be answered during development
 
             **Guidelines:**
             - Keep questions focused and specific
@@ -74,11 +74,11 @@ jobs:
             - Do not start implementation - only prepare the issue
 
             **When complete:**
-            The issue will be ready when:
-            - All required sections are present and clear
+            Enrichment is complete when:
+            - Issue body has proper structure (Summary, Requirements, Acceptance Criteria)
             - Acceptance criteria are specific and testable
-            - User removes the draft label
-            - All clarifying questions are answered
+            - Draft label is removed
+            - Issue is ready for implementation (clarifying questions can be answered during development)
 
             **Format your updates as comments on this issue.**
 

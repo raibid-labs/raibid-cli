@@ -14,10 +14,10 @@ The Issue Enrichment Agent is a specialized agent that improves draft issues bef
 - The issue creator wants to iterate on requirements before implementation
 
 **Enrichment completes when:**
-- The draft label is removed by the issue creator
-- All clarifying questions are answered
-- The issue has clear acceptance criteria
-- The issue is ready for a development agent to implement
+- The issue body has proper structure (Summary, Requirements, Acceptance Criteria)
+- The issue has clear, testable acceptance criteria
+- The draft label is removed by the enrichment agent
+- The issue is ready for implementation (clarifying questions can be answered during development)
 
 ## Workflow
 
@@ -105,22 +105,20 @@ One-paragraph overview of the issue
 - **Flag risks** or complex areas
 - **Suggest similar examples** from the codebase
 
-### 3. Iteration Loop
+### 3. Completion and Transition
 
 ```
-Agent posts clarifying questions
+Agent enriches issue body with structure
     ↓
-User responds with answers
+Agent posts clarifying questions (optional, as comments)
     ↓
-Agent updates issue with clarifications
-    ↓
-Agent identifies remaining gaps
-    ↓
-[Repeat until issue is complete]
-    ↓
-User removes draft label
+Agent removes draft label (enrichment complete)
     ↓
 Normal implementation workflow begins
+    ↓
+If questions exist: Normal workflow adds "waiting:answers" label
+    ↓
+Development can proceed, or pause until questions answered
 ```
 
 ## Best Practices
@@ -323,9 +321,21 @@ Implement JWT-based authentication system with email/password login, password re
 7. **Invalid Reset Token**: Try reset with expired/invalid token (should fail)
 ```
 
-### User Removes Draft Label
+### Enrichment Agent Removes Draft Label
 
-Issue is now ready for implementation! A development agent will be spawned to implement this feature following TDD workflow.
+**Agent Final Comment:**
+
+Enrichment complete! I've updated the issue with:
+- Clear requirements and acceptance criteria
+- Technical approach and implementation notes
+- Clarifying questions for refinement (optional - can be answered during implementation)
+
+Removing draft label - issue is ready for implementation agent.
+
+**Result:** Issue is now ready for implementation! The normal orchestrator workflow will:
+- Detect clarifying questions (if any) and add "waiting:answers" label
+- Or spawn development agent immediately if no questions
+- Development agent will implement following TDD workflow
 
 ## Agent Response Examples
 
