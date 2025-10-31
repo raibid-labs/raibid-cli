@@ -38,10 +38,16 @@ Orchestrator spawns enrichment agent
 The enrichment agent should:
 
 #### Analyze Current State
-- Read the issue title and body
+- Read the issue title and body using `gh issue view <number>`
 - Identify what's clear vs. unclear
 - Note missing sections or information
 - Assess completeness for implementation
+
+#### Update Issue Body Directly
+**IMPORTANT**: Update the issue body using `gh issue edit <number> --body "..."` to add structure:
+- This ensures implementation agents see the enriched version in the issue description
+- Use comments for clarifying questions and progress updates (supplementary)
+- The issue body is the source of truth - must contain all requirements and acceptance criteria
 
 #### Identify Gaps
 - **Requirements**: Are all functional requirements specified?
@@ -52,7 +58,7 @@ The enrichment agent should:
 - **Technical Constraints**: Are there platform/technology constraints?
 
 #### Ask Clarifying Questions
-Add a `## Clarifying Questions` section with numbered questions:
+Post comments with a `## Clarifying Questions` section:
 
 ```markdown
 ## Clarifying Questions

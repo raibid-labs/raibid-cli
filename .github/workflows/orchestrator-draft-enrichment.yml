@@ -58,12 +58,12 @@ jobs:
             **Your role is to improve this draft issue to make it ready for implementation by development agents.**
 
             **Tasks:**
-            1. **Analyze** the current issue content
+            1. **Analyze** the current issue content using gh issue view
             2. **Identify gaps** - missing requirements, unclear acceptance criteria, missing context
-            3. **Ask clarifying questions** - add a ## Clarifying Questions section if needed
-            4. **Enrich content** - suggest improvements to make the issue more actionable
-            5. **Add structure** - ensure proper sections (Summary, Requirements, Acceptance Criteria, etc.)
-            6. **Iterate** - respond to user feedback and continue improving until draft label is removed
+            3. **Update the issue body** using gh issue edit --body - add proper structure with sections: Summary, Requirements, Acceptance Criteria, Technical Notes, etc.
+            4. **Ask clarifying questions** - post comments with specific questions if requirements are unclear
+            5. **Iterate** - when user answers questions, update the issue body again with refined requirements
+            6. **Remove draft label** when complete using gh issue edit --remove-label draft
 
             **Guidelines:**
             - Keep questions focused and specific
