@@ -13,10 +13,6 @@ permissions:
 jobs:
   check-draft-and-enrich:
     runs-on: ubuntu-latest
-    # Only run for issues with draft or status:draft label
-    if: |
-      contains(github.event.issue.labels.*.name, 'draft') ||
-      contains(github.event.issue.labels.*.name, 'status:draft')
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
