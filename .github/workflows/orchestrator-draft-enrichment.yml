@@ -41,7 +41,8 @@ jobs:
           fi
 
           # Post enrichment agent spawn trigger
-          gh issue comment $ISSUE_NUMBER --body "🤖 **ORCHESTRATOR-SPAWN-ENRICHMENT-AGENT**
+          gh issue comment $ISSUE_NUMBER --body "$(cat <<EOF
+🤖 **ORCHESTRATOR-SPAWN-ENRICHMENT-AGENT**
 
 **Issue**: #${ISSUE_NUMBER}
 **Type**: draft-enrichment
@@ -51,7 +52,7 @@ jobs:
 ---
 
 <!-- ENRICHMENT-AGENT-ACTIVE -->
-<!-- ORCHESTRATOR-STATE {\"agent_type\":\"enrichment\",\"issue\":${ISSUE_NUMBER},\"spawned_at\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"} -->
+<!-- ORCHESTRATOR-STATE {"agent_type":"enrichment","issue":${ISSUE_NUMBER},"spawned_at":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"} -->
 
 **Instructions for Enrichment Agent:**
 
@@ -60,7 +61,7 @@ jobs:
 **Tasks:**
 1. **Analyze** the current issue content
 2. **Identify gaps** - missing requirements, unclear acceptance criteria, missing context
-3. **Ask clarifying questions** - add a \"## Clarifying Questions\" section if needed
+3. **Ask clarifying questions** - add a "## Clarifying Questions" section if needed
 4. **Enrich content** - suggest improvements to make the issue more actionable
 5. **Add structure** - ensure proper sections (Summary, Requirements, Acceptance Criteria, etc.)
 6. **Iterate** - respond to user feedback and continue improving until draft label is removed
@@ -77,13 +78,15 @@ jobs:
 The issue will be ready when:
 - All required sections are present and clear
 - Acceptance criteria are specific and testable
-- User removes the \"draft\" label
+- User removes the "draft" label
 - All clarifying questions are answered
 
 **Format your updates as comments on this issue.**
 
 ---
-*Orchestrator Draft Enrichment System v1.0*"
+*Orchestrator Draft Enrichment System v1.0*
+EOF
+)"
 
       - name: Add Enrichment Label
         if: steps.draft_check.outputs.is_draft == 'true'
@@ -104,7 +107,8 @@ The issue will be ready when:
           UNLABELED=$(echo '${{ github.event.label.name }}' | grep -i draft || true)
 
           if [ -n "$UNLABELED" ]; then
-            gh issue comment ${{ github.event.issue.number }} --body "✅ **Draft Status Removed - Enrichment Complete**
+            gh issue comment ${{ github.event.issue.number }} --body "$(cat <<EOF
+✅ **Draft Status Removed - Enrichment Complete**
 
 The draft label has been removed. This issue is now ready for implementation workflow.
 
@@ -116,7 +120,9 @@ The draft label has been removed. This issue is now ready for implementation wor
 **Status**: ENRICHMENT COMPLETE → READY FOR IMPLEMENTATION
 
 ---
-*Orchestrator Event-Driven System v1.0*"
+*Orchestrator Event-Driven System v1.0*
+EOF
+)"
 
             gh issue edit ${{ github.event.issue.number }} \
               --remove-label "enrichment:active" || true
