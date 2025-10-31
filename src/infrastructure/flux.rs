@@ -112,6 +112,7 @@ impl Default for FluxConfig {
 
 impl FluxConfig {
     /// Get the full repository URL
+    #[allow(dead_code)]
     pub fn repository_url(&self) -> String {
         format!("{}/{}/{}.git", self.gitea_url, self.username, self.repository)
     }
@@ -156,6 +157,7 @@ pub struct FluxInstaller {
 
 impl FluxInstaller {
     /// Create a new Flux installer with default configuration
+    #[allow(dead_code)]
     pub fn new() -> Result<Self> {
         Self::with_config(FluxConfig::default())
     }
@@ -403,6 +405,7 @@ impl FluxInstaller {
     }
 
     /// Create GitRepository resource
+    #[allow(dead_code)]
     pub fn create_git_repository(&self, name: &str, url: &str, branch: &str) -> Result<()> {
         info!("Creating GitRepository resource: {}", name);
 
@@ -435,6 +438,7 @@ impl FluxInstaller {
     }
 
     /// Create Kustomization resource
+    #[allow(dead_code)]
     pub fn create_kustomization(&self, name: &str, source: &str, path: &str) -> Result<()> {
         info!("Creating Kustomization resource: {}", name);
 

@@ -301,6 +301,7 @@ impl GiteaStatusChecker {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn with_namespace(namespace: String) -> Result<Self> {
         Ok(Self {
             client: get_kubernetes_client().await?,
@@ -478,6 +479,7 @@ impl RedisStatusChecker {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn with_namespace(namespace: String) -> Result<Self> {
         Ok(Self {
             client: get_kubernetes_client().await?,
@@ -640,6 +642,7 @@ impl KedaStatusChecker {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn with_namespace(namespace: String) -> Result<Self> {
         Ok(Self {
             client: get_kubernetes_client().await?,
@@ -770,6 +773,7 @@ impl FluxStatusChecker {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn with_namespace(namespace: String) -> Result<Self> {
         Ok(Self {
             client: get_kubernetes_client().await?,

@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result, anyhow};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use tracing::{debug, info, warn};
 
@@ -47,6 +47,7 @@ pub struct ScaledObjectConfig {
 #[derive(Debug, Clone, PartialEq)]
 pub enum TargetKind {
     Deployment,
+    #[allow(dead_code)]
     Job,
 }
 
@@ -119,6 +120,7 @@ impl KedaInstaller {
     }
 
     /// Check if kubectl is available
+    #[allow(dead_code)]
     fn check_kubectl(&self) -> Result<()> {
         let output = Command::new("kubectl")
             .arg("version")
@@ -546,6 +548,7 @@ spec:
     }
 
     /// Complete installation workflow
+    #[allow(dead_code)]
     pub fn install(&self) -> Result<()> {
         info!("Starting KEDA installation");
 

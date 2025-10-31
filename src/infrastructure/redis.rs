@@ -24,6 +24,7 @@ pub struct RedisStreamsConfig {
     /// Consumer group name
     pub consumer_group: String,
     /// Max length of stream (0 = unlimited)
+    #[allow(dead_code)]
     pub max_length: u64,
 }
 
@@ -100,6 +101,7 @@ impl RedisInstaller {
     }
 
     /// Check if kubectl is available
+    #[allow(dead_code)]
     fn check_kubectl(&self) -> Result<()> {
         let output = Command::new("kubectl")
             .arg("version")
@@ -118,6 +120,7 @@ impl RedisInstaller {
     }
 
     /// Check if Helm is available
+    #[allow(dead_code)]
     fn check_helm(&self) -> Result<()> {
         let output = Command::new("helm")
             .arg("version")
@@ -520,6 +523,7 @@ commonConfiguration: |-
     }
 
     /// Complete installation workflow
+    #[allow(dead_code)]
     pub fn install(&mut self) -> Result<RedisConnectionInfo> {
         info!("Starting Redis installation");
 
@@ -607,6 +611,7 @@ pub struct RedisConnectionInfo {
 
 impl RedisConnectionInfo {
     /// Get connection URL
+    #[allow(dead_code)]
     pub fn connection_url(&self) -> String {
         if let Some(ref pwd) = self.password {
             format!("redis://:{}@{}:{}", pwd, self.host, self.port)

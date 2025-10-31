@@ -18,9 +18,6 @@ mod schema;
 
 // Re-export public API
 pub use loader::{
-    apply_env_overrides, discover_config_files, expand_paths, load_config, load_config_file,
-    substitute_env_vars, validate_config,
+    discover_config_files, load_config, load_config_file, validate_config,
 };
-pub use schema::{
-    AgentsConfig, ApiConfig, ClusterConfig, Config, GiteaConfig, RedisConfig, UiConfig,
-};
+pub use schema::Config;

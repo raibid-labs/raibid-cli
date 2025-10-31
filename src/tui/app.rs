@@ -64,6 +64,7 @@ pub struct AppConfig {
     /// Refresh interval for updating data
     pub refresh_interval: Duration,
     /// Panel proportions (jobs, agents, queue) - percentages that sum to 100
+    #[allow(dead_code)]
     pub panel_proportions: (u16, u16, u16),
 }
 
@@ -164,6 +165,7 @@ impl App {
     }
 
     /// Get current tab
+    #[allow(dead_code)]
     pub fn current_tab(&self) -> Tab {
         self.current_tab
     }
@@ -179,11 +181,13 @@ impl App {
     }
 
     /// Get selected job index
+    #[allow(dead_code)]
     pub fn selected_job(&self) -> usize {
         self.selected_job
     }
 
     /// Get selected agent index
+    #[allow(dead_code)]
     pub fn selected_agent(&self) -> usize {
         self.selected_agent
     }
@@ -399,16 +403,19 @@ impl App {
     }
 
     /// Get jobs reference (for testing and integration tests)
+    #[allow(dead_code)]
     pub fn jobs(&self) -> &[MockJob] {
         &self.jobs
     }
 
     /// Get agents reference (for testing and integration tests)
+    #[allow(dead_code)]
     pub fn agents(&self) -> &[MockAgent] {
         &self.agents
     }
 
     /// Get queue data reference (for testing and integration tests)
+    #[allow(dead_code)]
     pub fn queue_data(&self) -> &MockQueueData {
         &self.queue_data
     }
@@ -569,8 +576,10 @@ pub struct UiState<'a> {
     pub confirmation_message: &'a str,
     pub input_mode: InputMode,
     pub search_query: &'a str,
+    #[allow(dead_code)]
     pub filter_status: Option<JobStatus>,
     pub selected_filter_option: usize,
+    #[allow(dead_code)]
     pub log_scroll_offset: usize,
 }
 

@@ -5,11 +5,11 @@
 #![allow(dead_code)]
 
 use std::process::Command;
-use std::time::{Duration, Instant};
-use tracing::{debug, info, warn};
+use std::time::Duration;
+use tracing::{info, warn};
 
 use crate::infrastructure::error::{InfraError, InfraResult};
-use crate::infrastructure::retry::{RetryConfig, poll_until, poll_until_async};
+use crate::infrastructure::retry::{RetryConfig, poll_until};
 
 /// Health check status
 #[derive(Debug, Clone, PartialEq, Eq)]
