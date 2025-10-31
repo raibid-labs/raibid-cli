@@ -94,7 +94,7 @@ impl Default for FluxConfig {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"));
         Self {
             version: FLUX_VERSION.to_string(),
-            install_dir: PathBuf::from("/usr/local/bin"),
+            install_dir: home.join(".local").join("bin"), // User-local, no sudo required
             namespace: "flux-system".to_string(),
             gitea_url: "http://gitea.gitea.svc.cluster.local:3000".to_string(),
             repository: "raibid-gitops".to_string(),
@@ -308,6 +308,9 @@ impl FluxInstaller {
 
     /// Extract and install Flux CLI
     pub fn install_flux_cli(&self, archive_path: &Path) -> Result<()> {
+        use crate::infrastructure::utils::{check_directory_writable, warn_if_not_in_path};
+        use std::os::unix::fs::PermissionsExt;
+
         info!("Extracting Flux CLI from archive");
 
         // Extract tar.gz archive
@@ -326,41 +329,30 @@ impl FluxInstaller {
             ));
         }
 
+        // Check if we can write to the install directory before proceeding
+        check_directory_writable(&self.config.install_dir)?;
+
         // Move flux binary to install directory
         let flux_binary = self.download_dir.join("flux");
         let install_path = self.config.install_dir.join("flux");
 
-        // Copy binary (requires sudo if installing to /usr/local/bin)
-        let output = Command::new("sudo")
-            .arg("cp")
-            .arg(&flux_binary)
-            .arg(&install_path)
-            .output()
-            .context("Failed to install Flux binary")?;
+        // Copy binary to install location (no sudo needed with user-local directory)
+        fs::copy(&flux_binary, &install_path)
+            .context("Failed to copy Flux binary to install directory")?;
 
-        if !output.status.success() {
-            return Err(anyhow!(
-                "Failed to install Flux binary: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ));
-        }
-
-        // Make executable
-        let output = Command::new("sudo")
-            .arg("chmod")
-            .arg("+x")
-            .arg(&install_path)
-            .output()
-            .context("Failed to make Flux executable")?;
-
-        if !output.status.success() {
-            return Err(anyhow!(
-                "Failed to make Flux executable: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ));
-        }
+        // Make executable (chmod +x)
+        let mut perms = fs::metadata(&install_path)
+            .context("Failed to get Flux binary metadata")?
+            .permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&install_path, perms)
+            .context("Failed to set Flux binary permissions")?;
 
         info!("Flux CLI installed to: {}", install_path.display());
+
+        // Warn if install directory is not in PATH
+        warn_if_not_in_path(&self.config.install_dir);
+
         Ok(())
     }
 

@@ -2,6 +2,8 @@
 //!
 //! This module provides health check functionality with timeouts and detailed status reporting.
 
+#![allow(dead_code)]
+
 use std::process::Command;
 use std::time::{Duration, Instant};
 use tracing::{debug, info, warn};

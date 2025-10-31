@@ -7,9 +7,11 @@ use std::fmt;
 use std::time::Duration;
 
 /// Result type alias for infrastructure operations
+#[allow(dead_code)]
 pub type InfraResult<T> = Result<T, InfraError>;
 
 /// Comprehensive error type for infrastructure operations
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum InfraError {
     /// Download-related errors
@@ -134,6 +136,7 @@ pub enum InfraError {
 }
 
 /// Installation phase for detailed error reporting
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InstallPhase {
     PreFlight,
@@ -162,6 +165,7 @@ impl fmt::Display for InstallPhase {
 }
 
 /// Helm operation types
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HelmOperation {
     RepoAdd,
@@ -188,6 +192,7 @@ impl fmt::Display for HelmOperation {
 }
 
 /// Validation error details
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ValidationError {
     pub field: String,
@@ -328,6 +333,7 @@ impl std::error::Error for InfraError {}
 /// Convert from anyhow::Error with context
 impl InfraError {
     /// Create a download error
+    #[allow(dead_code)]
     pub fn download(component: impl Into<String>, url: impl Into<String>, reason: impl Into<String>) -> Self {
         let component = component.into();
         let url = url.into();
@@ -352,6 +358,7 @@ impl InfraError {
     }
 
     /// Create a network error
+    #[allow(dead_code)]
     pub fn network(operation: impl Into<String>, reason: impl Into<String>) -> Self {
         let operation = operation.into();
         let reason = reason.into();
@@ -372,6 +379,7 @@ impl InfraError {
     }
 
     /// Create an installation error
+    #[allow(dead_code)]
     pub fn installation(
         component: impl Into<String>,
         phase: InstallPhase,
@@ -400,6 +408,7 @@ impl InfraError {
     }
 
     /// Check if error is transient and can be retried
+    #[allow(dead_code)]
     pub fn is_transient(&self) -> bool {
         matches!(self, InfraError::Transient { .. })
             || matches!(self, InfraError::Network { .. })
@@ -407,11 +416,13 @@ impl InfraError {
     }
 
     /// Check if error is fatal
+    #[allow(dead_code)]
     pub fn is_fatal(&self) -> bool {
         matches!(self, InfraError::Fatal { .. })
     }
 
     /// Get suggested retry delay if applicable
+    #[allow(dead_code)]
     pub fn retry_delay(&self) -> Option<Duration> {
         match self {
             InfraError::Transient { retry_after, .. } => *retry_after,
@@ -423,6 +434,7 @@ impl InfraError {
 }
 
 /// Helper trait for converting errors with context
+#[allow(dead_code)]
 pub trait ErrorContext<T> {
     fn infra_context(self, component: &str, phase: InstallPhase) -> InfraResult<T>;
 }
