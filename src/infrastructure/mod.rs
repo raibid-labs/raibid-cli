@@ -31,4 +31,35 @@ pub use status::{
     ComponentHealth, ComponentStatus, ResourceUsage,
 };
 
-// Error handling exports
+// Error handling exports (for tests and external use)
+#[allow(unused_imports)]
+pub use error::{InfraError, InfraResult, InstallPhase, HelmOperation, ValidationError, ErrorContext};
+#[allow(unused_imports)]
+pub use retry::{RetryConfig, retry_with_backoff, retry_with_backoff_async, poll_until, poll_until_async};
+#[allow(unused_imports)]
+pub use preflight::{
+    SystemRequirements, PreFlightValidator, PreFlightResult,
+    k3s_requirements, gitea_requirements, redis_requirements,
+    keda_requirements, flux_requirements,
+};
+#[allow(unused_imports)]
+pub use rollback::{RollbackManager, RollbackContext, RollbackAction};
+#[allow(unused_imports)]
+pub use healthcheck::{
+    HealthStatus, HealthCheckResult, CheckResult,
+    K3sHealthChecker, HelmHealthChecker,
+};
+
+// Config exports (for tests and commands)
+#[allow(unused_imports)]
+pub use k3s::K3sConfig;
+#[allow(unused_imports)]
+pub use gitea::{GiteaConfig, ServiceType};
+#[allow(unused_imports)]
+pub use redis::{RedisConfig, RedisConnectionInfo, RedisStreamsConfig};
+#[allow(unused_imports)]
+pub use keda::{KedaConfig, ScaledObjectConfig, TargetKind};
+
+// Status exports (for TUI and commands)
+#[allow(unused_imports)]
+pub use status::{PodStatus, VersionInfo, EndpointInfo};

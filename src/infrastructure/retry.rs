@@ -2,6 +2,8 @@
 //!
 //! This module provides retry mechanisms with exponential backoff for transient failures.
 
+#![allow(dead_code)]
+
 use std::time::Duration;
 use tracing::{debug, warn};
 use crate::infrastructure::error::{InfraError, InfraResult};

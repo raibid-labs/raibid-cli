@@ -3,6 +3,8 @@
 //! This module provides comprehensive pre-flight validation to ensure system
 //! requirements are met before installation begins.
 
+#![allow(dead_code)]
+
 use std::path::Path;
 use std::process::Command;
 use tracing::{debug, info, warn};

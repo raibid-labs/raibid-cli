@@ -9,7 +9,16 @@ mod mock_data;
 mod terminal;
 mod ui;
 
-pub use app::{App, AppConfig};
+#[allow(unused_imports)]
+pub use app::{App, AppConfig, InputMode, Tab};
+#[allow(unused_imports)]
+pub use events::Event;
+#[allow(unused_imports)]
+pub use mock_data::{
+    generate_mock_data, AgentStatus, JobStatus, MockAgent, MockDataConfig, MockJob, MockQueueData,
+};
+#[allow(unused_imports)]
+pub use terminal::{Terminal, MIN_HEIGHT, MIN_WIDTH};
 
 use anyhow::Result;
 
@@ -37,6 +46,7 @@ pub fn launch() -> Result<()> {
 }
 
 /// Launch the TUI application with custom configuration
+#[allow(dead_code)]
 pub fn launch_with_config(config: AppConfig) -> Result<()> {
     // Initialize terminal
     let mut terminal = terminal::init()?;
