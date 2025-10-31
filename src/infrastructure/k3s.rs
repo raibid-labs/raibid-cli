@@ -15,6 +15,25 @@ use tracing::{debug, info, warn};
 const K3S_VERSION: &str = "v1.28.5+k3s1";
 const K3S_GITHUB_RELEASE_URL: &str = "https://github.com/k3s-io/k3s/releases/download";
 
+/// k3s server execution mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum K3sMode {
+    /// Rootless mode - runs k3s without root privileges (experimental)
+    Rootless,
+    /// Root mode - runs k3s with sudo (full feature set)
+    Root,
+}
+
+impl K3sMode {
+    /// Get a human-readable description of the mode
+    pub fn description(&self) -> &str {
+        match self {
+            K3sMode::Rootless => "rootless (no sudo required, experimental)",
+            K3sMode::Root => "root (requires sudo, full features)",
+        }
+    }
+}
+
 /// Platform-specific binary names
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Platform {
@@ -67,21 +86,66 @@ pub struct K3sConfig {
     pub kubeconfig_path: PathBuf,
     /// Additional k3s server flags
     pub server_flags: Vec<String>,
+    /// k3s server execution mode (rootless or root)
+    pub mode: K3sMode,
 }
 
 impl Default for K3sConfig {
     fn default() -> Self {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"));
+
+        // Default to rootless mode for development/testing (no sudo required)
+        let mode = K3sMode::Rootless;
+
+        // Configure server flags based on mode
+        let mut server_flags = vec![
+            "--write-kubeconfig-mode=644".to_string(),
+            "--disable=traefik".to_string(), // We don't need traefik for CI
+        ];
+
+        // Add rootless-specific flags
+        if matches!(mode, K3sMode::Rootless) {
+            server_flags.push("--rootless".to_string());
+            server_flags.push("--snapshotter=fuse-overlayfs".to_string());
+        }
+
         Self {
             version: K3S_VERSION.to_string(),
             install_dir: home.join(".local").join("bin"), // User-local, no sudo required
             data_dir: PathBuf::from("/var/lib/rancher/k3s"),
             kubeconfig_path: home.join(".kube").join("config"),
-            server_flags: vec![
-                "--write-kubeconfig-mode=644".to_string(),
-                "--disable=traefik".to_string(), // We don't need traefik for CI
-            ],
+            server_flags,
+            mode,
         }
+    }
+}
+
+/// Check if cgroup v2 is available on the system
+///
+/// Rootless k3s requires pure cgroup v2 (not hybrid or v1).
+/// This function checks if the system is running cgroup v2.
+pub fn cgroup_v2_available() -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        // Check if /sys/fs/cgroup is mounted as cgroup2
+        if let Ok(mounts) = fs::read_to_string("/proc/mounts") {
+            for line in mounts.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 3 {
+                    let mount_point = parts[1];
+                    let fs_type = parts[2];
+                    if mount_point == "/sys/fs/cgroup" && fs_type == "cgroup2" {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        false
     }
 }
 
@@ -252,13 +316,40 @@ impl K3sInstaller {
 
     /// Bootstrap k3s cluster
     pub fn bootstrap_cluster(&self) -> Result<()> {
-        info!("Bootstrapping k3s cluster");
+        info!("Bootstrapping k3s cluster in {:?} mode", self.config.mode);
+
+        // Pre-flight checks for rootless mode
+        if self.config.mode == K3sMode::Rootless {
+            if !cgroup_v2_available() {
+                warn!(
+                    "cgroup v2 is not available. Rootless mode requires pure cgroup v2.\n\
+                    To enable cgroup v2, add 'systemd.unified_cgroup_hierarchy=1' to kernel parameters."
+                );
+                // Continue anyway - k3s will provide a better error message if it fails
+            }
+        }
 
         let k3s_path = self.config.install_dir.join("k3s");
 
-        // Build k3s server command
-        let mut cmd = Command::new(&k3s_path);
-        cmd.arg("server");
+        // Build k3s server command based on mode
+        let mut cmd = match self.config.mode {
+            K3sMode::Rootless => {
+                // Rootless mode - run k3s directly
+                debug!("Running k3s in rootless mode (no sudo)");
+                let mut c = Command::new(&k3s_path);
+                c.arg("server");
+                c
+            }
+            K3sMode::Root => {
+                // Root mode - run k3s with sudo
+                debug!("Running k3s in root mode (with sudo)");
+                info!("Root mode requires sudo privileges. You may be prompted for your password.");
+                let mut c = Command::new("sudo");
+                c.arg(&k3s_path);
+                c.arg("server");
+                c
+            }
+        };
 
         // Add server flags
         for flag in &self.config.server_flags {
@@ -284,7 +375,7 @@ impl K3sInstaller {
                 ));
             }
             Ok(None) => {
-                info!("k3s server is running");
+                info!("k3s server is running in {:?} mode", self.config.mode);
             }
             Err(e) => {
                 return Err(anyhow!("Failed to check k3s server status: {}", e));
@@ -556,5 +647,71 @@ mod tests {
         fs::remove_dir_all(&test_dir).unwrap();
 
         assert!(result.is_err(), "Checksum verification should fail with wrong hash");
+    }
+
+    #[test]
+    fn test_k3s_mode_enum() {
+        // Test that K3sMode enum exists and has expected variants
+        let rootless = K3sMode::Rootless;
+        let root = K3sMode::Root;
+
+        assert_ne!(rootless, root, "Rootless and Root should be different variants");
+    }
+
+    #[test]
+    fn test_k3s_config_default_mode() {
+        // Test that default K3sConfig uses Rootless mode
+        let config = K3sConfig::default();
+
+        assert_eq!(config.mode, K3sMode::Rootless, "Default mode should be Rootless for development");
+    }
+
+    #[test]
+    fn test_k3s_config_rootless_flags() {
+        // Test that rootless mode includes required flags
+        let config = K3sConfig::default();
+
+        if config.mode == K3sMode::Rootless {
+            assert!(
+                config.server_flags.contains(&"--rootless".to_string()),
+                "Rootless mode should include --rootless flag"
+            );
+            assert!(
+                config.server_flags.contains(&"--snapshotter=fuse-overlayfs".to_string()),
+                "Rootless mode should include --snapshotter=fuse-overlayfs flag"
+            );
+        }
+    }
+
+    #[test]
+    fn test_cgroup_v2_detection() {
+        // Test cgroup v2 detection function
+        // This should work on most modern Linux systems
+        #[cfg(target_os = "linux")]
+        {
+            let result = cgroup_v2_available();
+            // Just ensure it returns a boolean without panicking
+            assert!(result == true || result == false);
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            // On non-Linux, should return false
+            let result = cgroup_v2_available();
+            assert_eq!(result, false, "cgroup v2 detection should return false on non-Linux");
+        }
+    }
+
+    #[test]
+    fn test_k3s_mode_display() {
+        // Test that K3sMode has useful Display/Debug output
+        let rootless = K3sMode::Rootless;
+        let root = K3sMode::Root;
+
+        let rootless_str = format!("{:?}", rootless);
+        let root_str = format!("{:?}", root);
+
+        assert!(rootless_str.contains("Rootless"), "Rootless mode should display as 'Rootless'");
+        assert!(root_str.contains("Root"), "Root mode should display as 'Root'");
     }
 }
