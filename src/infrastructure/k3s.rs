@@ -61,6 +61,7 @@ pub struct K3sConfig {
     /// Installation directory (default: /usr/local/bin)
     pub install_dir: PathBuf,
     /// Data directory (default: /var/lib/rancher/k3s)
+    #[allow(dead_code)]
     pub data_dir: PathBuf,
     /// Kubeconfig output path (default: ~/.kube/config)
     pub kubeconfig_path: PathBuf,
@@ -73,7 +74,7 @@ impl Default for K3sConfig {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"));
         Self {
             version: K3S_VERSION.to_string(),
-            install_dir: PathBuf::from("/usr/local/bin"),
+            install_dir: home.join(".local").join("bin"), // User-local, no sudo required
             data_dir: PathBuf::from("/var/lib/rancher/k3s"),
             kubeconfig_path: home.join(".kube").join("config"),
             server_flags: vec![
@@ -220,11 +221,12 @@ impl K3sInstaller {
 
     /// Install k3s binary to system location
     pub fn install_binary(&self, binary_path: &Path) -> Result<()> {
+        use crate::infrastructure::utils::{check_directory_writable, warn_if_not_in_path};
+
         info!("Installing k3s binary to {:?}", self.config.install_dir);
 
-        // Ensure install directory exists
-        fs::create_dir_all(&self.config.install_dir)
-            .context("Failed to create install directory")?;
+        // Check if we can write to the install directory before proceeding
+        check_directory_writable(&self.config.install_dir)?;
 
         let install_path = self.config.install_dir.join("k3s");
 
@@ -241,6 +243,9 @@ impl K3sInstaller {
             .context("Failed to set binary permissions")?;
 
         info!("Binary installed to {:?}", install_path);
+
+        // Warn if install directory is not in PATH
+        warn_if_not_in_path(&self.config.install_dir);
 
         Ok(())
     }
@@ -373,6 +378,7 @@ impl K3sInstaller {
     }
 
     /// Install k3s - complete installation workflow
+    #[allow(dead_code)]
     pub async fn install(&self) -> Result<()> {
         info!("Starting k3s installation");
 
@@ -453,8 +459,11 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = K3sConfig::default();
+        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"));
+        let expected_install_dir = home.join(".local").join("bin");
+
         assert_eq!(config.version, K3S_VERSION);
-        assert_eq!(config.install_dir, PathBuf::from("/usr/local/bin"));
+        assert_eq!(config.install_dir, expected_install_dir);
         assert!(config.server_flags.contains(&"--write-kubeconfig-mode=644".to_string()));
     }
 

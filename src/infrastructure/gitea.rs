@@ -48,14 +48,18 @@ pub struct GiteaConfig {
 }
 
 /// Service type for Gitea exposure
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ServiceType {
     NodePort,
+    #[allow(dead_code)]
     LoadBalancer,
+    #[allow(dead_code)]
     ClusterIP,
 }
 
 impl ServiceType {
+    #[allow(dead_code)]
     pub fn as_str(&self) -> &str {
         match self {
             ServiceType::NodePort => "NodePort",
@@ -618,6 +622,7 @@ impl GiteaInstaller {
     }
 
     /// Complete Gitea installation workflow
+    #[allow(dead_code)]
     pub async fn install(&self) -> Result<()> {
         info!("Starting Gitea installation");
 
@@ -718,6 +723,7 @@ pub struct ServiceInfo {
     pub service_type: String,
     pub node_port: Option<u16>,
     pub load_balancer_ip: Option<String>,
+    #[allow(dead_code)]
     pub namespace: String,
 }
 

@@ -19,6 +19,7 @@ pub mod retry;
 pub mod preflight;
 pub mod rollback;
 pub mod healthcheck;
+pub mod utils;
 
 pub use k3s::K3sInstaller;
 pub use gitea::{GiteaInstaller, GiteaConfig, ServiceType};
