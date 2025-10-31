@@ -102,6 +102,7 @@ For more information, see the troubleshooting section in the README.
 }
 
 /// Get the default user-local bin directory
+#[allow(dead_code)]
 pub fn get_user_local_bin() -> PathBuf {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"));
     home.join(".local").join("bin")
