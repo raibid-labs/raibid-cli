@@ -58,7 +58,20 @@ cd raibid-cli
 # Build release binary
 cargo build --release
 
-# Install to /usr/local/bin (optional)
+# Install to user-local directory (recommended, no sudo required)
+mkdir -p ~/.local/bin
+cp target/release/raibid-cli ~/.local/bin/
+
+# Add to PATH if not already (add to your ~/.bashrc or ~/.zshrc)
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+**Alternative: System-wide Installation**
+
+If you prefer system-wide installation:
+
+```bash
+# Install to /usr/local/bin (requires sudo)
 sudo cp target/release/raibid-cli /usr/local/bin/
 ```
 
@@ -72,7 +85,21 @@ rustup target add aarch64-unknown-linux-gnu
 cargo build --release --target aarch64-unknown-linux-gnu
 
 # Binary will be at: target/aarch64-unknown-linux-gnu/release/raibid-cli
+
+# Install to user-local directory
+mkdir -p ~/.local/bin
+cp target/aarch64-unknown-linux-gnu/release/raibid-cli ~/.local/bin/
 ```
+
+#### Installation Directory
+
+By default, `raibid-cli setup all` installs infrastructure binaries (k3s, flux) to `~/.local/bin`. This directory:
+
+- Requires no sudo/elevated permissions
+- Follows the XDG Base Directory specification
+- Works for single-user setups
+
+If `~/.local/bin` is not in your PATH, raibid-cli will display a warning with instructions to add it.
 
 ### First Run
 
@@ -503,6 +530,55 @@ See `Cargo.toml` for full dependency list.
 - **WS-06**: Integration testing and production deployment
 
 ## Troubleshooting
+
+### Permission Denied During Setup
+
+**Problem**: `raibid-cli setup all` fails with "Permission denied (os error 13)"
+
+**Cause**: Trying to install to a directory that requires elevated permissions (like `/usr/local/bin`)
+
+**Solution**:
+
+By default, raibid-cli now installs to `~/.local/bin` which requires no sudo. If you're seeing this error:
+
+1. **Check your configuration** - You may have a custom `install_dir` set:
+   ```bash
+   raibid-cli config show
+   ```
+
+2. **Use the default user-local installation** (recommended):
+   - Remove any custom `install_dir` from your config
+   - Ensure `~/.local/bin` is in your PATH:
+     ```bash
+     # Add to ~/.bashrc or ~/.zshrc
+     export PATH="$HOME/.local/bin:$PATH"
+
+     # Reload shell
+     source ~/.bashrc  # or source ~/.zshrc
+     ```
+
+3. **Or use a custom writable directory**:
+   ```bash
+   # Create a custom bin directory
+   mkdir -p ~/bin
+
+   # Set it in your config (create ~/.config/raibid/config.yaml)
+   echo "install_dir: $HOME/bin" > ~/.config/raibid/config.yaml
+
+   # Add to PATH
+   export PATH="$HOME/bin:$PATH"
+   ```
+
+4. **System-wide installation** (not recommended):
+   If you need system-wide installation, you'll need to manually install binaries:
+   ```bash
+   # Download binaries first
+   raibid-cli setup all --download-only
+
+   # Then manually copy with sudo
+   sudo cp ~/.cache/raibid/k3s /usr/local/bin/
+   sudo cp ~/.cache/raibid/flux /usr/local/bin/
+   ```
 
 ### Binary Not Found After Building
 
