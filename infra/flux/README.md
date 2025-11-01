@@ -2,18 +2,27 @@
 
 GitOps continuous delivery from Gitea.
 
-## Overview
+## Documentation
 
-Flux provides GitOps-based continuous delivery for raibid-ci. It monitors the Gitea repository and automatically applies Kubernetes manifests when changes are detected.
+- **[Bootstrap Guide](bootstrap.sh)** - Automated Flux installation script
+- **[Validation Guide](validate.sh)** - Comprehensive validation script
+- **[GitOps Workflow](GITOPS_WORKFLOW.md)** - Complete GitOps workflow guide
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Troubleshooting guide and solutions
 
-## Manifests
+## Quick Start
 
-- `namespace.yaml` - Flux namespace
-- `gitrepository.yaml` - GitRepository source
-- `kustomization.yaml` - Kustomization for deployment
-- `flux-system/` - Flux system components
+### Bootstrap Flux
 
-## Deployment
+```bash
+# Set Gitea password
+export GITEA_PASSWORD="your-gitea-password"
+
+# Run bootstrap script
+./bootstrap.sh
+
+# Validate installation
+./validate.sh
+```
 
 ### Via raibid-cli
 
@@ -21,19 +30,83 @@ Flux provides GitOps-based continuous delivery for raibid-ci. It monitors the Gi
 raibid-cli setup flux
 ```
 
-### Via Flux CLI
+## Overview
+
+Flux provides GitOps-based continuous delivery for raibid-ci. It monitors the Gitea repository and automatically applies Kubernetes manifests when changes are detected.
+
+### Key Features
+
+- **Automated Sync**: Git commits automatically applied to cluster
+- **Image Automation**: Automatic image updates (optional)
+- **Multi-Source**: Support for Git, Helm, and OCI repositories
+- **Notifications**: Alerts for reconciliation events
+- **Progressive Delivery**: Integration with Flagger for canary deployments
+
+## Manifests
+
+- `namespace.yaml` - Flux namespace
+- `gitrepository.yaml` - GitRepository source pointing to Gitea
+- `kustomization.yaml` - Kustomization for infrastructure deployment
+- `flux-system/` - Flux system components directory
+  - `gotk-components.yaml` - Flux controllers and CRDs
+  - `gotk-sync.yaml` - Flux self-management sync
+  - `kustomization.yaml` - Kustomize overlay
+- `bootstrap.sh` - Automated bootstrap script
+- `validate.sh` - Validation and health check script
+
+## Deployment
+
+### Method 1: Bootstrap Script (Recommended)
+
+The bootstrap script automates the entire Flux installation:
+
+```bash
+# Prerequisites
+# - k3s cluster running
+# - Gitea deployed and accessible
+# - kubectl configured
+
+# Set required environment variable
+export GITEA_PASSWORD="your-gitea-password"
+
+# Run bootstrap
+cd infra/flux
+./bootstrap.sh
+
+# Output:
+# - Installs Flux CLI
+# - Creates Gitea repository
+# - Installs Flux controllers
+# - Applies GitRepository and Kustomization
+# - Validates installation
+```
+
+### Method 2: raibid-cli
+
+```bash
+raibid-cli setup flux
+```
+
+### Method 3: Manual Installation
 
 ```bash
 # Install Flux CLI
 curl -s https://fluxcd.io/install.sh | sudo bash
 
-# Bootstrap Flux with Gitea
-flux bootstrap generic \
-  --url=http://gitea.raibid-gitea.svc.cluster.local:3000/raibid/infrastructure \
-  --username=raibid-admin \
-  --password=$GITEA_PASSWORD \
+# Create namespace
+kubectl apply -f namespace.yaml
+
+# Install Flux components
+flux install \
   --namespace=flux-system \
+  --components=source-controller,kustomize-controller,helm-controller,notification-controller \
   --components-extra=image-reflector-controller,image-automation-controller
+
+# Create Gitea credentials
+kubectl create secret generic gitea-credentials \
+  --namespace=flux-system \
+  --from-literal=username=raibid-admin \
+  --from-literal=password=$GITEA_PASSWORD
 
 # Apply GitRepository and Kustomization
 kubectl apply -f gitrepository.yaml
@@ -45,7 +118,7 @@ kubectl apply -f kustomization.yaml
 ### Default Settings
 
 - **Namespace**: `flux-system`
-- **Source**: Gitea repository
+- **Source**: Gitea repository at `http://gitea.raibid-gitea.svc.cluster.local:3000/raibid/infrastructure`
 - **Branch**: `main`
 - **Sync Interval**: 1 minute
 - **Prune**: Enabled (delete removed resources)
@@ -78,20 +151,39 @@ Defines how to apply manifests:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: raibid-ci
+  name: raibid-ci-infrastructure
   namespace: flux-system
 spec:
   interval: 5m
   sourceRef:
     kind: GitRepository
     name: raibid-infrastructure
-  path: ./manifests
+  path: ./infra/manifests
   prune: true
   wait: true
   timeout: 5m
 ```
 
 ## Validation
+
+### Automated Validation
+
+```bash
+# Run comprehensive validation
+./validate.sh
+
+# Checks performed:
+# - Kubectl connectivity
+# - Flux CLI installed
+# - Flux namespace exists
+# - Flux controllers running
+# - GitRepository syncing
+# - Kustomization applying
+# - Credentials configured
+# - No failed reconciliations
+```
+
+### Manual Validation
 
 ```bash
 # Check Flux pods
@@ -102,46 +194,57 @@ kubectl get pods -n flux-system
 # - kustomize-controller
 # - helm-controller
 # - notification-controller
+# - image-reflector-controller (optional)
+# - image-automation-controller (optional)
 
 # Check GitRepository
-kubectl get gitrepository -n flux-system
+flux get sources git
 
 # Check Kustomization
-kubectl get kustomization -n flux-system
+flux get kustomizations
 
 # View sync status
-flux get sources git
-flux get kustomizations
+flux check
 ```
 
 ## GitOps Workflow
 
-### 1. Commit Changes
+See [GITOPS_WORKFLOW.md](GITOPS_WORKFLOW.md) for complete workflow guide.
+
+### Quick Workflow
 
 ```bash
-# Make changes to infrastructure
+# 1. Make changes to infrastructure
 vim infra/gitea/values.yaml
 
-# Commit and push
+# 2. Commit and push
 git add infra/gitea/values.yaml
 git commit -m "Update Gitea configuration"
 git push origin main
+
+# 3. Watch Flux reconcile
+flux logs --follow
+
+# 4. Verify changes applied
+kubectl get pods -n raibid-gitea
 ```
 
-### 2. Flux Detects Changes
+### Flux Detects Changes
 
 Flux polls the GitRepository every minute:
+
 ```bash
 # Watch Flux reconcile
 kubectl logs -n flux-system -l app=source-controller -f
 ```
 
-### 3. Apply Changes
+### Apply Changes
 
 Flux applies changes automatically:
+
 ```bash
 # View reconciliation
-flux reconcile kustomization raibid-ci --with-source
+flux reconcile kustomization raibid-ci-infrastructure --with-source
 
 # Check events
 kubectl get events -n flux-system --sort-by='.lastTimestamp'
@@ -160,7 +263,7 @@ flux get kustomizations
 
 # View detailed status
 kubectl describe gitrepository raibid-infrastructure -n flux-system
-kubectl describe kustomization raibid-ci -n flux-system
+kubectl describe kustomization raibid-ci-infrastructure -n flux-system
 ```
 
 ### Notifications
@@ -181,12 +284,34 @@ spec:
   - kind: GitRepository
     name: raibid-infrastructure
   - kind: Kustomization
-    name: raibid-ci
+    name: raibid-ci-infrastructure
 ```
 
 ## Troubleshooting
 
-### GitRepository Not Syncing
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for comprehensive troubleshooting guide.
+
+### Quick Diagnostics
+
+```bash
+# Check system health
+flux check
+
+# View all resources
+flux get all
+
+# Check controller logs
+kubectl logs -n flux-system deploy/source-controller --tail=50
+kubectl logs -n flux-system deploy/kustomize-controller --tail=50
+
+# Force reconciliation
+flux reconcile source git raibid-infrastructure
+flux reconcile kustomization raibid-ci-infrastructure
+```
+
+### Common Issues
+
+#### GitRepository Not Syncing
 
 ```bash
 # Check GitRepository status
@@ -202,11 +327,11 @@ flux reconcile source git raibid-infrastructure
 kubectl logs -n flux-system -l app=source-controller --tail=50
 ```
 
-### Kustomization Failing
+#### Kustomization Failing
 
 ```bash
 # Check Kustomization status
-kubectl describe kustomization raibid-ci -n flux-system
+kubectl describe kustomization raibid-ci-infrastructure -n flux-system
 
 # View error messages
 flux get kustomizations
@@ -218,7 +343,7 @@ kubectl logs -n flux-system -l app=kustomize-controller --tail=50
 kustomize build ./infra/manifests/
 ```
 
-### Authentication Issues
+#### Authentication Issues
 
 ```bash
 # Test Gitea connection
@@ -370,3 +495,5 @@ kubectl delete namespace flux-system
 - [GitOps Toolkit](https://fluxcd.io/flux/components/)
 - [Flux GitHub](https://github.com/fluxcd/flux2)
 - [Get Started with Flux](https://fluxcd.io/flux/get-started/)
+- [GitOps Workflow Guide](GITOPS_WORKFLOW.md)
+- [Troubleshooting Guide](TROUBLESHOOTING.md)
