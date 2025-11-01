@@ -103,11 +103,7 @@ pub struct Job {
 impl Job {
     /// Calculate duration in seconds
     pub fn calculate_duration(&self) -> Option<u64> {
-        if let Some(finished) = self.finished_at {
-            Some((finished - self.started_at).num_seconds() as u64)
-        } else {
-            None
-        }
+        self.finished_at.map(|finished| (finished - self.started_at).num_seconds() as u64)
     }
 
     /// Get human-readable duration string

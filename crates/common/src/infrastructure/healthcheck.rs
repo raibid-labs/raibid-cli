@@ -141,9 +141,7 @@ impl K3sHealthChecker {
         result.add_check(
             "kubectl",
             kubectl_check.is_ok(),
-            kubectl_check
-                .as_ref()
-                .map(|s| s.clone())
+            kubectl_check.clone()
                 .unwrap_or_else(|e| e.to_string()),
         );
 
@@ -152,9 +150,7 @@ impl K3sHealthChecker {
         result.add_check(
             "nodes_ready",
             nodes_check.is_ok(),
-            nodes_check
-                .as_ref()
-                .map(|s| s.clone())
+            nodes_check.clone()
                 .unwrap_or_else(|e| e.to_string()),
         );
 
@@ -163,9 +159,7 @@ impl K3sHealthChecker {
         result.add_check(
             "system_pods",
             pods_check.is_ok(),
-            pods_check
-                .as_ref()
-                .map(|s| s.clone())
+            pods_check.clone()
                 .unwrap_or_else(|e| e.to_string()),
         );
 
@@ -299,9 +293,7 @@ impl HelmHealthChecker {
         result.add_check(
             "release_exists",
             release_check.is_ok(),
-            release_check
-                .as_ref()
-                .map(|s| s.clone())
+            release_check.clone()
                 .unwrap_or_else(|e| e.to_string()),
         );
 
@@ -310,9 +302,7 @@ impl HelmHealthChecker {
         result.add_check(
             "release_deployed",
             status_check.is_ok(),
-            status_check
-                .as_ref()
-                .map(|s| s.clone())
+            status_check.clone()
                 .unwrap_or_else(|e| e.to_string()),
         );
 
@@ -321,9 +311,7 @@ impl HelmHealthChecker {
         result.add_check(
             "pods_ready",
             pods_check.is_ok(),
-            pods_check
-                .as_ref()
-                .map(|s| s.clone())
+            pods_check.clone()
                 .unwrap_or_else(|e| e.to_string()),
         );
 

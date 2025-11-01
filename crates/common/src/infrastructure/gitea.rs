@@ -542,7 +542,7 @@ impl GiteaInstaller {
         let info = String::from_utf8_lossy(&output.stdout);
         let parts: Vec<&str> = info.split(',').collect();
 
-        let service_type = parts.get(0).unwrap_or(&"Unknown").to_string();
+        let service_type = parts.first().unwrap_or(&"Unknown").to_string();
         let node_port = parts.get(1).and_then(|s| s.parse::<u16>().ok());
         let load_balancer_ip = parts
             .get(2)
