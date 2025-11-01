@@ -15,4 +15,4 @@ pub mod jobs;
 // Re-export commonly used types
 pub use config::Config;
 pub use infrastructure::error::InfraError;
-pub use jobs::{Job, JobStatus, JobList, JobListQuery, JobTrigger, JobLogs, JobLogEntry};
+pub use jobs::{Job, JobList, JobListQuery, JobLogEntry, JobLogs, JobStatus, JobTrigger};

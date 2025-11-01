@@ -145,10 +145,7 @@ impl PipelineExecutor {
     /// Create a new pipeline executor
     pub fn new(config: PipelineConfig) -> Result<Self> {
         let redis_client = if let Some(ref url) = config.redis_url {
-            Some(
-                redis::Client::open(url.as_str())
-                    .context("Failed to create Redis client")?,
-            )
+            Some(redis::Client::open(url.as_str()).context("Failed to create Redis client")?)
         } else {
             None
         };
@@ -182,7 +179,11 @@ impl PipelineExecutor {
 
         // Execute each step with timeout
         for step in steps {
-            match timeout(PIPELINE_TIMEOUT - start_time.elapsed(), self.execute_step(step)).await
+            match timeout(
+                PIPELINE_TIMEOUT - start_time.elapsed(),
+                self.execute_step(step),
+            )
+            .await
             {
                 Ok(Ok(result)) => {
                     if !result.success {
@@ -423,7 +424,9 @@ impl PipelineExecutor {
         cmd.current_dir(&self.config.repo_path);
 
         // Set environment for sccache if enabled
-        if self.config.use_sccache && matches!(step, BuildStep::Build | BuildStep::Check | BuildStep::Test) {
+        if self.config.use_sccache
+            && matches!(step, BuildStep::Build | BuildStep::Check | BuildStep::Test)
+        {
             cmd.env("RUSTC_WRAPPER", "sccache");
         }
 
@@ -493,7 +496,10 @@ impl PipelineExecutor {
         }
 
         // Wait for process to exit
-        let status = child.wait().await.context("Failed to wait for child process")?;
+        let status = child
+            .wait()
+            .await
+            .context("Failed to wait for child process")?;
         let exit_code = status.code().unwrap_or(-1);
 
         Ok((exit_code, output_buffer))
@@ -639,8 +645,8 @@ impl PipelineExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::path::Path;
+    use tempfile::TempDir;
 
     /// Helper to create a minimal Rust project for testing
     async fn create_test_project(dir: &Path) -> Result<()> {
@@ -776,15 +782,13 @@ mod tests {
         let result = PipelineResult {
             job_id: "job-789".to_string(),
             success: true,
-            steps: vec![
-                StepResult {
-                    step: "check".to_string(),
-                    success: true,
-                    exit_code: Some(0),
-                    duration_secs: 5,
-                    output: "Checking complete".to_string(),
-                },
-            ],
+            steps: vec![StepResult {
+                step: "check".to_string(),
+                success: true,
+                exit_code: Some(0),
+                duration_secs: 5,
+                output: "Checking complete".to_string(),
+            }],
             total_duration_secs: 10,
             artifacts: None,
         };

@@ -3,7 +3,7 @@
 //! These tests verify the complete pipeline functionality with realistic
 //! Rust projects.
 
-use raibid_agent::{PipelineConfig, PipelineExecutor, BuildStep};
+use raibid_agent::{BuildStep, PipelineConfig, PipelineExecutor};
 use std::path::PathBuf;
 use tempfile::TempDir;
 use tokio::fs;
@@ -199,7 +199,10 @@ async fn test_pipeline_format_failure() {
     // Format check should fail, causing pipeline to stop
     let format_step = result.steps.iter().find(|s| s.step == "format");
     if let Some(step) = format_step {
-        assert!(!step.success, "Format check should fail for unformatted code");
+        assert!(
+            !step.success,
+            "Format check should fail for unformatted code"
+        );
         assert!(!result.success, "Overall pipeline should fail");
     }
 }
@@ -259,7 +262,8 @@ async fn test_pipeline_with_redis_logging() {
 
     // This test would require a running Redis instance
     // Skip for now, but structure is here for future integration testing
-    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
+    let redis_url =
+        std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
 
     let config = PipelineConfig {
         job_id: "test-redis-logging".to_string(),
@@ -298,7 +302,6 @@ async fn test_build_step_enum() {
 #[tokio::test]
 async fn test_pipeline_timeout_configuration() {
     // Verify timeout constants are reasonable
-    
 
     // These are internal constants, but we can verify behavior through tests
     // Step timeout: 5 minutes

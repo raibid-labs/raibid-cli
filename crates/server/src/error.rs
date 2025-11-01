@@ -73,16 +73,19 @@ impl IntoResponse for ServerError {
             ServerError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.clone()),
             ServerError::Config(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
             ServerError::Unauthorized(ref msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
-            ServerError::RateLimitExceeded => (StatusCode::TOO_MANY_REQUESTS, "Rate limit exceeded".to_string()),
-            ServerError::Redis(ref err) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", err))
-            }
-            ServerError::Io(ref err) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-            }
-            ServerError::Json(ref err) => {
-                (StatusCode::BAD_REQUEST, format!("JSON parsing error: {}", err))
-            }
+            ServerError::RateLimitExceeded => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "Rate limit exceeded".to_string(),
+            ),
+            ServerError::Redis(ref err) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Redis error: {}", err),
+            ),
+            ServerError::Io(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            ServerError::Json(ref err) => (
+                StatusCode::BAD_REQUEST,
+                format!("JSON parsing error: {}", err),
+            ),
         };
 
         let body = Json(ErrorResponse {
