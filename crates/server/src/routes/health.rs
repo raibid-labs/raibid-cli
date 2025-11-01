@@ -126,7 +126,12 @@ mod tests {
         let app = routes().with_state(state.clone());
 
         let response = app
-            .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -146,7 +151,12 @@ mod tests {
         let app = routes().with_state(state);
 
         let response = app
-            .oneshot(Request::builder().uri("/health/live").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/health/live")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -159,7 +169,12 @@ mod tests {
         let app = routes().with_state(state);
 
         let response = app
-            .oneshot(Request::builder().uri("/health/ready").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/health/ready")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
