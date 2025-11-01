@@ -329,7 +329,7 @@ commonConfiguration: |-
             .arg("--for=condition=ready")
             .arg("pod")
             .arg("--selector")
-            .arg(format!("app.kubernetes.io/name=redis"))
+            .arg("app.kubernetes.io/name=redis")
             .arg("--namespace")
             .arg(&self.config.namespace)
             .arg("--timeout=300s")

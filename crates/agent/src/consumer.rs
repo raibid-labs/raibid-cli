@@ -42,7 +42,7 @@ impl JobConsumer {
         let mut conn = client
             .get_multiplexed_async_connection()
             .await
-            .map_err(|e| AgentError::RedisConnection(e))?;
+            .map_err(AgentError::RedisConnection)?;
 
         // Ping Redis to verify connection
         redis::cmd("PING")
