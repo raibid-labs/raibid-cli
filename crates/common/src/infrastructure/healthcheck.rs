@@ -141,8 +141,7 @@ impl K3sHealthChecker {
         result.add_check(
             "kubectl",
             kubectl_check.is_ok(),
-            kubectl_check.clone()
-                .unwrap_or_else(|e| e.to_string()),
+            kubectl_check.clone().unwrap_or_else(|e| e.to_string()),
         );
 
         // Check if nodes are ready
@@ -150,8 +149,7 @@ impl K3sHealthChecker {
         result.add_check(
             "nodes_ready",
             nodes_check.is_ok(),
-            nodes_check.clone()
-                .unwrap_or_else(|e| e.to_string()),
+            nodes_check.clone().unwrap_or_else(|e| e.to_string()),
         );
 
         // Check if system pods are running
@@ -159,8 +157,7 @@ impl K3sHealthChecker {
         result.add_check(
             "system_pods",
             pods_check.is_ok(),
-            pods_check.clone()
-                .unwrap_or_else(|e| e.to_string()),
+            pods_check.clone().unwrap_or_else(|e| e.to_string()),
         );
 
         result.evaluate_status();
@@ -293,8 +290,7 @@ impl HelmHealthChecker {
         result.add_check(
             "release_exists",
             release_check.is_ok(),
-            release_check.clone()
-                .unwrap_or_else(|e| e.to_string()),
+            release_check.clone().unwrap_or_else(|e| e.to_string()),
         );
 
         // Check if release is deployed
@@ -302,8 +298,7 @@ impl HelmHealthChecker {
         result.add_check(
             "release_deployed",
             status_check.is_ok(),
-            status_check.clone()
-                .unwrap_or_else(|e| e.to_string()),
+            status_check.clone().unwrap_or_else(|e| e.to_string()),
         );
 
         // Check if pods are ready
@@ -311,8 +306,7 @@ impl HelmHealthChecker {
         result.add_check(
             "pods_ready",
             pods_check.is_ok(),
-            pods_check.clone()
-                .unwrap_or_else(|e| e.to_string()),
+            pods_check.clone().unwrap_or_else(|e| e.to_string()),
         );
 
         result.evaluate_status();
