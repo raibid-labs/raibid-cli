@@ -166,6 +166,6 @@ mod tests {
 
         // This would normally make a request, but we're just testing URL construction
         // In a real test, we'd use a mock HTTP server
-        assert!(matches!(client.list_jobs(&query), Err(_)));
+        assert!(client.list_jobs(&query).is_err());
     }
 }
