@@ -42,9 +42,7 @@ impl JobConsumer {
         let mut conn = client
             .get_multiplexed_async_connection()
             .await
-            .map_err(|e| {
-                AgentError::RedisConnection(e)
-            })?;
+            .map_err(|e| AgentError::RedisConnection(e))?;
 
         // Ping Redis to verify connection
         redis::cmd("PING")
@@ -88,7 +86,10 @@ impl JobConsumer {
             Err(e) => {
                 let err_msg = e.to_string();
                 if err_msg.contains("BUSYGROUP") || err_msg.contains("already exists") {
-                    debug!("Consumer group already exists: {}", config.redis.consumer_group);
+                    debug!(
+                        "Consumer group already exists: {}",
+                        config.redis.consumer_group
+                    );
                     Ok(())
                 } else {
                     Err(AgentError::RedisConnection(e))
@@ -99,7 +100,10 @@ impl JobConsumer {
 
     /// Run the consumer loop
     pub async fn run(self) -> AgentResult<()> {
-        info!("Starting job consumer loop for agent {}", self.config.agent_id);
+        info!(
+            "Starting job consumer loop for agent {}",
+            self.config.agent_id
+        );
 
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let last_id = ">".to_string(); // Start with new messages
@@ -116,12 +120,14 @@ impl JobConsumer {
                                 error!("Failed to process job {}: {}", msg.job.id, e);
 
                                 // Try to mark job as failed
-                                let _ = self.update_job_status(
-                                    &mut conn,
-                                    &msg.job.id,
-                                    JobStatus::Failed,
-                                    Some(format!("Error: {}", e)),
-                                ).await;
+                                let _ = self
+                                    .update_job_status(
+                                        &mut conn,
+                                        &msg.job.id,
+                                        JobStatus::Failed,
+                                        Some(format!("Error: {}", e)),
+                                    )
+                                    .await;
 
                                 // Acknowledge the message even on failure to avoid reprocessing
                                 let _ = self.acknowledge_message(&mut conn, &msg.id).await;
@@ -137,7 +143,8 @@ impl JobConsumer {
                 Err(e) => {
                     error!("Error polling jobs: {}", e);
                     // Wait before retrying
-                    tokio::time::sleep(Duration::from_millis(self.config.poll_interval_ms * 2)).await;
+                    tokio::time::sleep(Duration::from_millis(self.config.poll_interval_ms * 2))
+                        .await;
                 }
             }
 
@@ -214,7 +221,8 @@ impl JobConsumer {
         info!("Processing job: {}", job_id);
 
         // Update job status to running
-        self.update_job_status(conn, job_id, JobStatus::Running, None).await?;
+        self.update_job_status(conn, job_id, JobStatus::Running, None)
+            .await?;
 
         // Execute the job
         let result = self.executor.execute(&msg.job).await;
@@ -233,7 +241,8 @@ impl JobConsumer {
                     job_id,
                     status,
                     Some(format!("Exit code: {}", exit_code)),
-                ).await?;
+                )
+                .await?;
 
                 info!("Job {} completed with exit code {}", job_id, exit_code);
             }
@@ -243,7 +252,8 @@ impl JobConsumer {
                     job_id,
                     JobStatus::Failed,
                     Some(format!("Execution error: {}", e)),
-                ).await?;
+                )
+                .await?;
 
                 error!("Job {} failed: {}", job_id, e);
             }
@@ -319,10 +329,7 @@ mod tests {
         };
 
         let job_json = serde_json::to_string(&job).unwrap();
-        data.insert(
-            "job".to_string(),
-            redis::Value::Data(job_json.into_bytes()),
-        );
+        data.insert("job".to_string(), redis::Value::Data(job_json.into_bytes()));
 
         let msg = JobConsumer::parse_job_message("1234567890-0", &data).unwrap();
         assert_eq!(msg.id, "1234567890-0");

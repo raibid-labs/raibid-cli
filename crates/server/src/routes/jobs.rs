@@ -3,7 +3,8 @@
 use axum::{
     extract::{Path, Query, State},
     response::{
-        sse::{Event, KeepAlive}, Sse,
+        sse::{Event, KeepAlive},
+        Sse,
     },
     routing::get,
     Json, Router,
@@ -255,7 +256,9 @@ async fn get_job_logs(
 }
 
 /// Parse job from Redis hash data
-fn parse_job_from_hash(data: &std::collections::HashMap<String, String>) -> Result<Job, ServerError> {
+fn parse_job_from_hash(
+    data: &std::collections::HashMap<String, String>,
+) -> Result<Job, ServerError> {
     let id = data
         .get("id")
         .ok_or_else(|| ServerError::Internal("Missing job id".to_string()))?
@@ -285,9 +288,9 @@ fn parse_job_from_hash(data: &std::collections::HashMap<String, String>) -> Resu
         .parse::<chrono::DateTime<chrono::Utc>>()
         .map_err(|e| ServerError::Internal(format!("Invalid started_at: {}", e)))?;
 
-    let finished_at = data.get("finished_at").and_then(|s| {
-        s.parse::<chrono::DateTime<chrono::Utc>>().ok()
-    });
+    let finished_at = data
+        .get("finished_at")
+        .and_then(|s| s.parse::<chrono::DateTime<chrono::Utc>>().ok());
 
     let duration = data.get("duration").and_then(|s| s.parse::<u64>().ok());
     let agent_id = data.get("agent_id").cloned();
@@ -358,9 +361,9 @@ async fn read_log_entries(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::StatusCode;
     use axum::{body::Body, http::Request};
     use tower::ServiceExt;
-    use axum::http::StatusCode;
 
     #[tokio::test]
     async fn test_list_jobs_without_redis() {
@@ -368,12 +371,7 @@ mod tests {
         let app = routes().with_state(state);
 
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/jobs")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri("/jobs").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -408,10 +406,7 @@ mod tests {
         data.insert("branch".to_string(), "main".to_string());
         data.insert("commit".to_string(), "abc123".to_string());
         data.insert("status".to_string(), "running".to_string());
-        data.insert(
-            "started_at".to_string(),
-            "2025-11-01T12:00:00Z".to_string(),
-        );
+        data.insert("started_at".to_string(), "2025-11-01T12:00:00Z".to_string());
 
         let job = parse_job_from_hash(&data).unwrap();
         assert_eq!(job.id, "job-123");

@@ -5,7 +5,10 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 /// Helper to start a test server with Redis
-async fn start_test_server(port: u16, redis_url: &str) -> (tokio::task::JoinHandle<()>, ServerConfig) {
+async fn start_test_server(
+    port: u16,
+    redis_url: &str,
+) -> (tokio::task::JoinHandle<()>, ServerConfig) {
     let mut config = ServerConfig::default();
     config.port = port;
     config.redis_url = redis_url.to_string();
@@ -49,9 +52,12 @@ async fn test_list_jobs_endpoint_exists() {
 async fn test_get_job_by_id_endpoint_exists() {
     let (handle, config) = start_test_server(18091, "redis://127.0.0.1:6379").await;
 
-    let response = reqwest::get(format!("http://{}:{}/jobs/test-job-123", config.host, config.port))
-        .await
-        .expect("Failed to make request");
+    let response = reqwest::get(format!(
+        "http://{}:{}/jobs/test-job-123",
+        config.host, config.port
+    ))
+    .await
+    .expect("Failed to make request");
 
     // Should return either 404/500 depending on Redis availability
     assert!(response.status().is_client_error() || response.status().is_server_error());
@@ -65,7 +71,10 @@ async fn test_job_logs_endpoint_exists() {
 
     let client = reqwest::Client::new();
     let response = client
-        .get(format!("http://{}:{}/jobs/test-job-123/logs", config.host, config.port))
+        .get(format!(
+            "http://{}:{}/jobs/test-job-123/logs",
+            config.host, config.port
+        ))
         .send()
         .await
         .expect("Failed to make request");
@@ -181,11 +190,7 @@ async fn test_concurrent_job_requests() {
         let client = client.clone();
         let url = format!("http://{}:{}/jobs", config.host, config.port);
         let handle = tokio::spawn(async move {
-            let response = client
-                .get(&url)
-                .query(&[("limit", "5")])
-                .send()
-                .await;
+            let response = client.get(&url).query(&[("limit", "5")]).send().await;
             (i, response)
         });
         handles.push(handle);

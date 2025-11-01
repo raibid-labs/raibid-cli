@@ -69,11 +69,7 @@ impl JobExecutor {
         };
 
         let repo_path = tokio::task::spawn_blocking(move || {
-            git_manager.clone_repository(
-                &repo_url_clone,
-                &branch,
-                commit.as_deref(),
-            )
+            git_manager.clone_repository(&repo_url_clone, &branch, commit.as_deref())
         })
         .await
         .map_err(|e| AgentError::Internal(format!("Task join error: {}", e)))??;
@@ -122,7 +118,9 @@ impl JobExecutor {
         }
 
         // Step 3: cargo build --release
-        let build_exit = self.run_command(repo_path, "cargo", &["build", "--release"]).await?;
+        let build_exit = self
+            .run_command(repo_path, "cargo", &["build", "--release"])
+            .await?;
         if build_exit != 0 {
             warn!("cargo build failed with exit code {}", build_exit);
             return Ok(build_exit);
