@@ -47,15 +47,13 @@ impl std::fmt::Display for ComponentHealth {
 }
 
 /// Resource usage information
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ResourceUsage {
     pub cpu_usage: Option<String>,
     pub memory_usage: Option<String>,
     pub cpu_cores: Option<f64>,
     pub memory_bytes: Option<u64>,
 }
-
 
 /// Pod status information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -214,11 +212,7 @@ impl ComponentStatusChecker for K3sStatusChecker {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), "kube-system");
         let pod_list = pods.list(&ListParams::default()).await?;
 
-        Ok(pod_list
-            .items
-            .iter()
-            .map(pod_to_status)
-            .collect())
+        Ok(pod_list.items.iter().map(pod_to_status).collect())
     }
 
     async fn get_version(&self) -> Result<Option<VersionInfo>> {
@@ -335,11 +329,7 @@ impl ComponentStatusChecker for GiteaStatusChecker {
         let lp = ListParams::default().labels("app.kubernetes.io/name=gitea");
         let pod_list = pods.list(&lp).await?;
 
-        Ok(pod_list
-            .items
-            .iter()
-            .map(pod_to_status)
-            .collect())
+        Ok(pod_list.items.iter().map(pod_to_status).collect())
     }
 
     async fn get_version(&self) -> Result<Option<VersionInfo>> {
@@ -358,7 +348,11 @@ impl ComponentStatusChecker for GiteaStatusChecker {
                     {
                         if let Some(image) = &containers.image {
                             // Extract version from image tag
-                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
+                            let version = image
+                                .split(':')
+                                .next_back()
+                                .unwrap_or("unknown")
+                                .to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
@@ -517,11 +511,7 @@ impl ComponentStatusChecker for RedisStatusChecker {
         let lp = ListParams::default().labels("app.kubernetes.io/name=redis");
         let pod_list = pods.list(&lp).await?;
 
-        Ok(pod_list
-            .items
-            .iter()
-            .map(pod_to_status)
-            .collect())
+        Ok(pod_list.items.iter().map(pod_to_status).collect())
     }
 
     async fn get_version(&self) -> Result<Option<VersionInfo>> {
@@ -538,7 +528,11 @@ impl ComponentStatusChecker for RedisStatusChecker {
                         .and_then(|s| s.containers.first())
                     {
                         if let Some(image) = &containers.image {
-                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
+                            let version = image
+                                .split(':')
+                                .next_back()
+                                .unwrap_or("unknown")
+                                .to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
@@ -675,11 +669,7 @@ impl ComponentStatusChecker for KedaStatusChecker {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
         let pod_list = pods.list(&ListParams::default()).await?;
 
-        Ok(pod_list
-            .items
-            .iter()
-            .map(pod_to_status)
-            .collect())
+        Ok(pod_list.items.iter().map(pod_to_status).collect())
     }
 
     async fn get_version(&self) -> Result<Option<VersionInfo>> {
@@ -695,7 +685,11 @@ impl ComponentStatusChecker for KedaStatusChecker {
                         .and_then(|s| s.containers.first())
                     {
                         if let Some(image) = &containers.image {
-                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
+                            let version = image
+                                .split(':')
+                                .next_back()
+                                .unwrap_or("unknown")
+                                .to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
@@ -805,11 +799,7 @@ impl ComponentStatusChecker for FluxStatusChecker {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
         let pod_list = pods.list(&ListParams::default()).await?;
 
-        Ok(pod_list
-            .items
-            .iter()
-            .map(pod_to_status)
-            .collect())
+        Ok(pod_list.items.iter().map(pod_to_status).collect())
     }
 
     async fn get_version(&self) -> Result<Option<VersionInfo>> {
@@ -830,7 +820,11 @@ impl ComponentStatusChecker for FluxStatusChecker {
                         .and_then(|s| s.containers.first())
                     {
                         if let Some(image) = &containers.image {
-                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
+                            let version = image
+                                .split(':')
+                                .next_back()
+                                .unwrap_or("unknown")
+                                .to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
