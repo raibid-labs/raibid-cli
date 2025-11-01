@@ -7,9 +7,9 @@ pub mod config;
 pub mod setup;
 pub mod teardown;
 pub mod status;
+pub mod jobs;
 
 // Placeholder for future command implementations
 // Command modules will be added in future issues:
-// - pub mod job;
 // - pub mod agent;
 // - pub mod mirror;
