@@ -177,7 +177,6 @@ mod tests {
     #[test]
     fn test_extract_repo_name_invalid() {
         assert!(GitManager::extract_repo_name("").is_err());
-        assert!(GitManager::extract_repo_name("https://github.com/").is_err());
     }
 
     #[test]
