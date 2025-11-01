@@ -1,0 +1,16 @@
+# This file is a placeholder for Flux GitOps Toolkit components
+# The actual components will be installed by the bootstrap script using:
+# flux install --export > gotk-components.yaml
+#
+# Components include:
+# - source-controller
+# - kustomize-controller
+# - helm-controller
+# - notification-controller
+# - image-reflector-controller (optional)
+# - image-automation-controller (optional)
+#
+# This file will be generated during bootstrap and should be committed
+# to the Git repository for GitOps management of Flux itself.
+---
+# Placeholder - will be replaced during bootstrap

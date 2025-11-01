@@ -3,7 +3,7 @@
 //! This module handles deploying KEDA (Kubernetes Event-Driven Autoscaling) with Helm
 //! to k3s cluster and configuring ScaledObject for Redis Streams-based autoscaling.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -140,18 +140,14 @@ impl KedaInstaller {
 
     /// Check if Helm is available
     pub fn check_helm(&self) -> Result<()> {
-        let output = Command::new("helm")
-            .arg("version")
-            .output();
+        let output = Command::new("helm").arg("version").output();
 
         match output {
             Ok(out) if out.status.success() => {
                 debug!("helm is available");
                 Ok(())
             }
-            _ => Err(anyhow!(
-                "helm not found. Please install Helm 3.x"
-            )),
+            _ => Err(anyhow!("helm not found. Please install Helm 3.x")),
         }
     }
 
@@ -286,8 +282,7 @@ rbac:
         // Generate Helm values
         let values = self.generate_helm_values()?;
         let values_file = std::env::temp_dir().join("keda-values.yaml");
-        fs::write(&values_file, values)
-            .context("Failed to write Helm values file")?;
+        fs::write(&values_file, values).context("Failed to write Helm values file")?;
 
         // Build Helm install command
         let mut cmd = Command::new("helm");
@@ -311,8 +306,7 @@ rbac:
 
         debug!("Running Helm install: {:?}", cmd);
 
-        let output = cmd.output()
-            .context("Failed to run Helm install")?;
+        let output = cmd.output().context("Failed to run Helm install")?;
 
         // Clean up values file
         let _ = fs::remove_file(&values_file);
@@ -379,7 +373,11 @@ rbac:
         info!("Validating KEDA installation");
 
         // Check CRDs exist
-        let crds = vec!["scaledobjects.keda.sh", "scaledjobs.keda.sh", "triggerauthentications.keda.sh"];
+        let crds = vec![
+            "scaledobjects.keda.sh",
+            "scaledjobs.keda.sh",
+            "triggerauthentications.keda.sh",
+        ];
 
         for crd in crds {
             let output = Command::new("kubectl")
@@ -496,8 +494,7 @@ spec:
         // Generate ScaledObject YAML
         let yaml = self.generate_scaled_object_yaml(config)?;
         let yaml_file = std::env::temp_dir().join("scaled-object.yaml");
-        fs::write(&yaml_file, &yaml)
-            .context("Failed to write ScaledObject YAML file")?;
+        fs::write(&yaml_file, &yaml).context("Failed to write ScaledObject YAML file")?;
 
         // Apply ScaledObject
         let output = Command::new("kubectl")
