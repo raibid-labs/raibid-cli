@@ -361,9 +361,9 @@ impl fmt::Display for InfraError {
                 )
             }
             InfraError::Validation { component, errors } => {
-                write!(f, "Validation failed for {}:\n", component)?;
+                writeln!(f, "Validation failed for {}:", component)?;
                 for err in errors {
-                    write!(f, "  - {}: {}\n", err.field, err.message)?;
+                    writeln!(f, "  - {}: {}", err.field, err.message)?;
                 }
                 Ok(())
             }
@@ -395,7 +395,7 @@ impl fmt::Display for InfraError {
                     component, reason
                 )?;
                 for ctx in context {
-                    write!(f, "  - {}\n", ctx)?;
+                    writeln!(f, "  - {}", ctx)?;
                 }
                 Ok(())
             }
