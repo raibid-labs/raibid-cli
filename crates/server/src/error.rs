@@ -56,9 +56,7 @@ impl IntoResponse for ServerError {
             ServerError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             ServerError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.clone()),
             ServerError::Config(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
-            ServerError::Io(ref err) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-            }
+            ServerError::Io(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
         };
 
         let body = Json(ErrorResponse {

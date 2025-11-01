@@ -4,10 +4,10 @@
 //! Each command is implemented as a separate module.
 
 pub mod config;
-pub mod setup;
-pub mod teardown;
-pub mod status;
 pub mod jobs;
+pub mod setup;
+pub mod status;
+pub mod teardown;
 
 // Placeholder for future command implementations
 // Command modules will be added in future issues:
