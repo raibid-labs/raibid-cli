@@ -70,8 +70,8 @@ fn list_jobs(
 
     if json {
         // Output as JSON
-        let json_str = serde_json::to_string_pretty(&job_list)
-            .context("Failed to serialize jobs to JSON")?;
+        let json_str =
+            serde_json::to_string_pretty(&job_list).context("Failed to serialize jobs to JSON")?;
         println!("{}", json_str);
     } else {
         // Output as formatted table
@@ -148,18 +148,29 @@ fn show_logs(job_id: &str, follow: bool, tail: Option<usize>) -> Result<()> {
 
     if follow {
         // Follow mode: poll for new logs
-        println!("{} Following logs for job {}...", "Info:".cyan().bold(), job_id);
+        println!(
+            "{} Following logs for job {}...",
+            "Info:".cyan().bold(),
+            job_id
+        );
         println!("{}", "─".repeat(80).truecolor(100, 100, 100));
 
         let mut last_line_count = 0;
 
         loop {
-            let logs = client.get_job_logs(job_id, None).context("Failed to fetch logs")?;
+            let logs = client
+                .get_job_logs(job_id, None)
+                .context("Failed to fetch logs")?;
 
             // Print new lines only
             for entry in logs.entries.iter().skip(last_line_count) {
-                println!("[{}] {}",
-                    entry.timestamp.format("%H:%M:%S").to_string().truecolor(150, 150, 150),
+                println!(
+                    "[{}] {}",
+                    entry
+                        .timestamp
+                        .format("%H:%M:%S")
+                        .to_string()
+                        .truecolor(150, 150, 150),
                     entry.message
                 );
             }
@@ -167,10 +178,13 @@ fn show_logs(job_id: &str, follow: bool, tail: Option<usize>) -> Result<()> {
             last_line_count = logs.entries.len();
 
             // Check if job is finished
-            let job = client.get_job(job_id).context("Failed to fetch job status")?;
+            let job = client
+                .get_job(job_id)
+                .context("Failed to fetch job status")?;
             if job.status.is_terminal() {
                 println!("{}", "─".repeat(80).truecolor(100, 100, 100));
-                println!("{} Job finished with status: {}",
+                println!(
+                    "{} Job finished with status: {}",
                     "Info:".cyan().bold(),
                     format_status(&job.status)
                 );
@@ -182,7 +196,9 @@ fn show_logs(job_id: &str, follow: bool, tail: Option<usize>) -> Result<()> {
         }
     } else {
         // One-time fetch
-        let logs = client.get_job_logs(job_id, tail).context("Failed to fetch logs")?;
+        let logs = client
+            .get_job_logs(job_id, tail)
+            .context("Failed to fetch logs")?;
 
         if logs.entries.is_empty() {
             println!("{}", "No logs available.".yellow());
@@ -193,8 +209,13 @@ fn show_logs(job_id: &str, follow: bool, tail: Option<usize>) -> Result<()> {
         println!("{}", "─".repeat(80).truecolor(100, 100, 100));
 
         for entry in &logs.entries {
-            println!("[{}] {}",
-                entry.timestamp.format("%H:%M:%S").to_string().truecolor(150, 150, 150),
+            println!(
+                "[{}] {}",
+                entry
+                    .timestamp
+                    .format("%H:%M:%S")
+                    .to_string()
+                    .truecolor(150, 150, 150),
                 entry.message
             );
         }
@@ -221,7 +242,9 @@ fn trigger_job(repo: &str, branch: &str, commit: Option<&str>, json: bool) -> Re
         commit.map(|c| format!("({})", c)).unwrap_or_default()
     );
 
-    let job = client.trigger_job(&trigger).context("Failed to trigger job")?;
+    let job = client
+        .trigger_job(&trigger)
+        .context("Failed to trigger job")?;
 
     if json {
         let json_str =
@@ -239,11 +262,7 @@ fn trigger_job(repo: &str, branch: &str, commit: Option<&str>, json: bool) -> Re
 fn cancel_job(job_id: &str, json: bool) -> Result<()> {
     let client = ApiClient::from_env().context("Failed to create API client")?;
 
-    println!(
-        "{} Cancelling job {}...",
-        "Info:".cyan().bold(),
-        job_id
-    );
+    println!("{} Cancelling job {}...", "Info:".cyan().bold(), job_id);
 
     let job = client.cancel_job(job_id).context("Failed to cancel job")?;
 

@@ -32,8 +32,8 @@ impl ApiClient {
 
     /// Create API client from environment or default
     pub fn from_env() -> Result<Self> {
-        let base_url = std::env::var("RAIBID_API_URL")
-            .unwrap_or_else(|_| "http://localhost:8080".to_string());
+        let base_url =
+            std::env::var("RAIBID_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
         Self::new(base_url)
     }
 
@@ -122,13 +122,14 @@ impl ApiClient {
     }
 
     /// Handle HTTP response and parse JSON
-    fn handle_response<T: DeserializeOwned>(&self, response: reqwest::blocking::Response) -> Result<T> {
+    fn handle_response<T: DeserializeOwned>(
+        &self,
+        response: reqwest::blocking::Response,
+    ) -> Result<T> {
         let status = response.status();
 
         if status.is_success() {
-            response
-                .json()
-                .context("Failed to parse JSON response")
+            response.json().context("Failed to parse JSON response")
         } else {
             let error_text = response
                 .text()
