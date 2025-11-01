@@ -12,6 +12,10 @@ async fn test_server_starts_and_responds() {
         log_format: "text".to_string(),
         cors_enabled: false,
         max_body_size: 1024 * 1024,
+        redis_url: "redis://127.0.0.1:6379".to_string(),
+        gitea_webhook_secret: None,
+        github_webhook_secret: None,
+        rate_limit_rpm: 100,
     };
 
     let server = Server::new(config.clone());
@@ -42,6 +46,10 @@ async fn test_health_endpoints_return_json() {
         log_format: "text".to_string(),
         cors_enabled: false,
         max_body_size: 1024 * 1024,
+        redis_url: "redis://127.0.0.1:6379".to_string(),
+        gitea_webhook_secret: None,
+        github_webhook_secret: None,
+        rate_limit_rpm: 100,
     };
 
     let server = Server::new(config.clone());
@@ -89,6 +97,10 @@ async fn test_request_id_header() {
         log_format: "text".to_string(),
         cors_enabled: false,
         max_body_size: 1024 * 1024,
+        redis_url: "redis://127.0.0.1:6379".to_string(),
+        gitea_webhook_secret: None,
+        github_webhook_secret: None,
+        rate_limit_rpm: 100,
     };
 
     let server = Server::new(config.clone());
