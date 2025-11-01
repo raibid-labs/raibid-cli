@@ -13,6 +13,8 @@ disable=SC2250  # Prefer braces around variables (style, non-critical)
 disable=SC2034  # Variable appears unused (will be used after refactoring)
 disable=SC2155  # Declare and assign separately (style, non-critical)
 disable=SC2310  # Function in if condition with set -e (informational)
+disable=SC2292  # Prefer [[ ]] over [ ] for tests (style, non-critical)
+disable=SC2248  # Prefer double quoting variables (style, non-critical)
 
 # Enable all optional checks
 enable=all
