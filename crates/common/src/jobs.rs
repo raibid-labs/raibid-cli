@@ -47,7 +47,10 @@ impl JobStatus {
 
     /// Check if the job is in a terminal state
     pub fn is_terminal(&self) -> bool {
-        matches!(self, JobStatus::Success | JobStatus::Failed | JobStatus::Cancelled)
+        matches!(
+            self,
+            JobStatus::Success | JobStatus::Failed | JobStatus::Cancelled
+        )
     }
 }
 
@@ -210,7 +213,10 @@ mod tests {
         assert_eq!("running".parse::<JobStatus>().unwrap(), JobStatus::Running);
         assert_eq!("success".parse::<JobStatus>().unwrap(), JobStatus::Success);
         assert_eq!("failed".parse::<JobStatus>().unwrap(), JobStatus::Failed);
-        assert_eq!("cancelled".parse::<JobStatus>().unwrap(), JobStatus::Cancelled);
+        assert_eq!(
+            "cancelled".parse::<JobStatus>().unwrap(),
+            JobStatus::Cancelled
+        );
     }
 
     #[test]

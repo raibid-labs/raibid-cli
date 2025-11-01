@@ -38,9 +38,9 @@ fn test_jobs_show_requires_id() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
     cmd.arg("jobs").arg("show");
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "required arguments were not provided",
+    ));
 }
 
 /// Test that jobs show command help
@@ -51,7 +51,9 @@ fn test_jobs_show_help() {
 
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Show detailed information about a specific job"))
+        .stdout(predicate::str::contains(
+            "Show detailed information about a specific job",
+        ))
         .stdout(predicate::str::contains("<JOB_ID>"));
 }
 
@@ -61,9 +63,9 @@ fn test_jobs_logs_requires_id() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
     cmd.arg("jobs").arg("logs");
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "required arguments were not provided",
+    ));
 }
 
 /// Test that jobs logs command accepts follow and tail options
@@ -85,16 +87,19 @@ fn test_jobs_trigger_requires_args() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
     cmd.arg("jobs").arg("trigger");
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "required arguments were not provided",
+    ));
 }
 
 /// Test that jobs trigger command with only repo fails
 #[test]
 fn test_jobs_trigger_requires_branch() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.arg("jobs").arg("trigger").arg("--repo").arg("test-repo");
+    cmd.arg("jobs")
+        .arg("trigger")
+        .arg("--repo")
+        .arg("test-repo");
 
     cmd.assert()
         .failure()
@@ -121,9 +126,9 @@ fn test_jobs_cancel_requires_id() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
     cmd.arg("jobs").arg("cancel");
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "required arguments were not provided",
+    ));
 }
 
 /// Test that jobs cancel command help

@@ -6,8 +6,8 @@
 
 use anyhow::{Context, Result};
 use colored::Colorize;
-use k8s_openapi::api::core::v1::{Node, Pod, Service};
 use k8s_openapi::api::apps::v1::Deployment;
+use k8s_openapi::api::core::v1::{Node, Pod, Service};
 use kube::{
     api::{Api, ListParams},
     Client, ResourceExt,
@@ -152,13 +152,12 @@ impl K3sStatusChecker {
         let node_list = nodes.list(&ListParams::default()).await?;
 
         let total_nodes = node_list.items.len();
-        let ready_nodes = node_list
-            .items
-            .iter()
-            .filter(|n| is_node_ready(n))
-            .count();
+        let ready_nodes = node_list.items.iter().filter(|n| is_node_ready(n)).count();
 
-        info.insert("nodes".to_string(), format!("{}/{} ready", ready_nodes, total_nodes));
+        info.insert(
+            "nodes".to_string(),
+            format!("{}/{} ready", ready_nodes, total_nodes),
+        );
 
         // Get pod count across all namespaces
         let pods: Api<Pod> = Api::all(self.client.clone());
@@ -177,7 +176,10 @@ impl K3sStatusChecker {
             })
             .count();
 
-        info.insert("pods".to_string(), format!("{}/{} running", running_pods, total_pods));
+        info.insert(
+            "pods".to_string(),
+            format!("{}/{} running", running_pods, total_pods),
+        );
 
         // Get service count
         let services: Api<Service> = Api::all(self.client.clone());
@@ -203,11 +205,7 @@ impl ComponentStatusChecker for K3sStatusChecker {
                 let pod_list = pods.list(&ListParams::default()).await?;
 
                 let total = pod_list.items.len();
-                let healthy = pod_list
-                    .items
-                    .iter()
-                    .filter(|p| is_pod_healthy(p))
-                    .count();
+                let healthy = pod_list.items.iter().filter(|p| is_pod_healthy(p)).count();
 
                 if healthy == total {
                     Ok(ComponentHealth::Healthy)
@@ -327,11 +325,7 @@ impl ComponentStatusChecker for GiteaStatusChecker {
                 }
 
                 let total = pod_list.items.len();
-                let healthy = pod_list
-                    .items
-                    .iter()
-                    .filter(|p| is_pod_healthy(p))
-                    .count();
+                let healthy = pod_list.items.iter().filter(|p| is_pod_healthy(p)).count();
 
                 if healthy == total {
                     Ok(ComponentHealth::Healthy)
@@ -365,9 +359,12 @@ impl ComponentStatusChecker for GiteaStatusChecker {
         match deployments.list(&lp).await {
             Ok(dep_list) => {
                 if let Some(deployment) = dep_list.items.first() {
-                    if let Some(containers) = deployment.spec.as_ref()
+                    if let Some(containers) = deployment
+                        .spec
+                        .as_ref()
                         .and_then(|s| s.template.spec.as_ref())
-                        .and_then(|s| s.containers.first()) {
+                        .and_then(|s| s.containers.first())
+                    {
                         if let Some(image) = &containers.image {
                             // Extract version from image tag
                             let version = image.split(':').last().unwrap_or("unknown").to_string();
@@ -409,16 +406,21 @@ impl ComponentStatusChecker for GiteaStatusChecker {
                             let url = if let Some(node_port) = port.node_port {
                                 format!("http://localhost:{}", node_port)
                             } else {
-                                format!("http://{}.{}.svc.cluster.local:{}",
+                                format!(
+                                    "http://{}.{}.svc.cluster.local:{}",
                                     service.name_any(),
                                     self.namespace,
-                                    port.port)
+                                    port.port
+                                )
                             };
 
                             endpoints.push(EndpointInfo {
                                 url,
                                 port: port_num,
-                                protocol: port.protocol.clone().unwrap_or_else(|| "TCP".to_string()),
+                                protocol: port
+                                    .protocol
+                                    .clone()
+                                    .unwrap_or_else(|| "TCP".to_string()),
                             });
                         }
                     }
@@ -505,11 +507,7 @@ impl ComponentStatusChecker for RedisStatusChecker {
                 }
 
                 let total = pod_list.items.len();
-                let healthy = pod_list
-                    .items
-                    .iter()
-                    .filter(|p| is_pod_healthy(p))
-                    .count();
+                let healthy = pod_list.items.iter().filter(|p| is_pod_healthy(p)).count();
 
                 if healthy == total {
                     Ok(ComponentHealth::Healthy)
@@ -542,9 +540,12 @@ impl ComponentStatusChecker for RedisStatusChecker {
         match deployments.list(&lp).await {
             Ok(dep_list) => {
                 if let Some(deployment) = dep_list.items.first() {
-                    if let Some(containers) = deployment.spec.as_ref()
+                    if let Some(containers) = deployment
+                        .spec
+                        .as_ref()
                         .and_then(|s| s.template.spec.as_ref())
-                        .and_then(|s| s.containers.first()) {
+                        .and_then(|s| s.containers.first())
+                    {
                         if let Some(image) = &containers.image {
                             let version = image.split(':').last().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
@@ -576,10 +577,12 @@ impl ComponentStatusChecker for RedisStatusChecker {
                 for service in svc_list.items {
                     if let Some(spec) = &service.spec {
                         for port in spec.ports.as_ref().unwrap_or(&vec![]) {
-                            let url = format!("redis://{}.{}.svc.cluster.local:{}",
+                            let url = format!(
+                                "redis://{}.{}.svc.cluster.local:{}",
                                 service.name_any(),
                                 self.namespace,
-                                port.port);
+                                port.port
+                            );
 
                             endpoints.push(EndpointInfo {
                                 url,
@@ -666,11 +669,7 @@ impl ComponentStatusChecker for KedaStatusChecker {
         }
 
         let total = pod_list.items.len();
-        let healthy = pod_list
-            .items
-            .iter()
-            .filter(|p| is_pod_healthy(p))
-            .count();
+        let healthy = pod_list.items.iter().filter(|p| is_pod_healthy(p)).count();
 
         if healthy == total {
             Ok(ComponentHealth::Healthy)
@@ -698,9 +697,12 @@ impl ComponentStatusChecker for KedaStatusChecker {
         match deployments.list(&ListParams::default()).await {
             Ok(dep_list) => {
                 if let Some(deployment) = dep_list.items.first() {
-                    if let Some(containers) = deployment.spec.as_ref()
+                    if let Some(containers) = deployment
+                        .spec
+                        .as_ref()
                         .and_then(|s| s.template.spec.as_ref())
-                        .and_then(|s| s.containers.first()) {
+                        .and_then(|s| s.containers.first())
+                    {
                         if let Some(image) = &containers.image {
                             let version = image.split(':').last().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
@@ -797,11 +799,7 @@ impl ComponentStatusChecker for FluxStatusChecker {
         }
 
         let total = pod_list.items.len();
-        let healthy = pod_list
-            .items
-            .iter()
-            .filter(|p| is_pod_healthy(p))
-            .count();
+        let healthy = pod_list.items.iter().filter(|p| is_pod_healthy(p)).count();
 
         if healthy == total {
             Ok(ComponentHealth::Healthy)
@@ -829,11 +827,17 @@ impl ComponentStatusChecker for FluxStatusChecker {
         match deployments.list(&ListParams::default()).await {
             Ok(dep_list) => {
                 // Get version from source-controller (main flux component)
-                if let Some(deployment) = dep_list.items.iter()
-                    .find(|d| d.name_any().contains("source-controller")) {
-                    if let Some(containers) = deployment.spec.as_ref()
+                if let Some(deployment) = dep_list
+                    .items
+                    .iter()
+                    .find(|d| d.name_any().contains("source-controller"))
+                {
+                    if let Some(containers) = deployment
+                        .spec
+                        .as_ref()
                         .and_then(|s| s.template.spec.as_ref())
-                        .and_then(|s| s.containers.first()) {
+                        .and_then(|s| s.containers.first())
+                    {
                         if let Some(image) = &containers.image {
                             let version = image.split(':').last().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
@@ -899,7 +903,8 @@ impl ComponentStatusChecker for FluxStatusChecker {
 
 /// Get Kubernetes client from kubeconfig
 async fn get_kubernetes_client() -> Result<Client> {
-    let client = Client::try_default().await
+    let client = Client::try_default()
+        .await
         .context("Failed to create Kubernetes client. Is k3s running?")?;
     Ok(client)
 }
@@ -910,28 +915,30 @@ fn is_node_ready(node: &Node) -> bool {
         .as_ref()
         .and_then(|s| s.conditions.as_ref())
         .map(|conditions| {
-            conditions.iter().any(|c| {
-                c.type_ == "Ready" && c.status == "True"
-            })
+            conditions
+                .iter()
+                .any(|c| c.type_ == "Ready" && c.status == "True")
         })
         .unwrap_or(false)
 }
 
 /// Check if a pod is healthy (running and ready)
 fn is_pod_healthy(pod: &Pod) -> bool {
-    let phase_ok = pod.status
+    let phase_ok = pod
+        .status
         .as_ref()
         .and_then(|s| s.phase.as_deref())
         .map(|phase| phase == "Running")
         .unwrap_or(false);
 
-    let ready_ok = pod.status
+    let ready_ok = pod
+        .status
         .as_ref()
         .and_then(|s| s.conditions.as_ref())
         .map(|conditions| {
-            conditions.iter().any(|c| {
-                c.type_ == "Ready" && c.status == "True"
-            })
+            conditions
+                .iter()
+                .any(|c| c.type_ == "Ready" && c.status == "True")
         })
         .unwrap_or(false);
 
@@ -942,23 +949,22 @@ fn is_pod_healthy(pod: &Pod) -> bool {
 fn pod_to_status(pod: &Pod) -> PodStatus {
     let name = pod.name_any();
     let namespace = pod.namespace().unwrap_or_else(|| "default".to_string());
-    let phase = pod.status
+    let phase = pod
+        .status
         .as_ref()
         .and_then(|s| s.phase.clone())
         .unwrap_or_else(|| "Unknown".to_string());
     let ready = is_pod_healthy(pod);
 
-    let restarts = pod.status
+    let restarts = pod
+        .status
         .as_ref()
         .and_then(|s| s.container_statuses.as_ref())
-        .map(|containers| {
-            containers.iter()
-                .map(|c| c.restart_count)
-                .sum()
-        })
+        .map(|containers| containers.iter().map(|c| c.restart_count).sum())
         .unwrap_or(0);
 
-    let age = pod.status
+    let age = pod
+        .status
         .as_ref()
         .and_then(|s| s.start_time.as_ref())
         .map(|t| {
