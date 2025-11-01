@@ -317,14 +317,13 @@ impl K3sInstaller {
         info!("Bootstrapping k3s cluster in {:?} mode", self.config.mode);
 
         // Pre-flight checks for rootless mode
-        if self.config.mode == K3sMode::Rootless
-            && !cgroup_v2_available() {
-                warn!(
+        if self.config.mode == K3sMode::Rootless && !cgroup_v2_available() {
+            warn!(
                     "cgroup v2 is not available. Rootless mode requires pure cgroup v2.\n\
                     To enable cgroup v2, add 'systemd.unified_cgroup_hierarchy=1' to kernel parameters."
                 );
-                // Continue anyway - k3s will provide a better error message if it fails
-            }
+            // Continue anyway - k3s will provide a better error message if it fails
+        }
 
         let k3s_path = self.config.install_dir.join("k3s");
 
