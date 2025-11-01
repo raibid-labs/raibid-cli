@@ -30,10 +30,7 @@ async fn is_redis_available() -> bool {
         std::env::var("RAIBID_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
     match redis::Client::open(redis_url.as_str()) {
-        Ok(client) => match client.get_multiplexed_async_connection().await {
-            Ok(_) => true,
-            Err(_) => false,
-        },
+        Ok(client) => (client.get_multiplexed_async_connection().await).is_ok(),
         Err(_) => false,
     }
 }

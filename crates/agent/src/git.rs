@@ -82,7 +82,7 @@ impl GitManager {
     fn checkout_commit(&self, repo: &Repository, commit_sha: &str) -> AgentResult<()> {
         debug!("Checking out commit: {}", commit_sha);
 
-        let oid = git2::Oid::from_str(commit_sha).map_err(|e| AgentError::Git(e))?;
+        let oid = git2::Oid::from_str(commit_sha).map_err(AgentError::Git)?;
 
         let commit = repo.find_commit(oid)?;
 

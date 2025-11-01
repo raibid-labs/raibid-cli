@@ -48,6 +48,7 @@ impl std::fmt::Display for ComponentHealth {
 
 /// Resource usage information
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct ResourceUsage {
     pub cpu_usage: Option<String>,
     pub memory_usage: Option<String>,
@@ -55,16 +56,6 @@ pub struct ResourceUsage {
     pub memory_bytes: Option<u64>,
 }
 
-impl Default for ResourceUsage {
-    fn default() -> Self {
-        Self {
-            cpu_usage: None,
-            memory_usage: None,
-            cpu_cores: None,
-            memory_bytes: None,
-        }
-    }
-}
 
 /// Pod status information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -226,7 +217,7 @@ impl ComponentStatusChecker for K3sStatusChecker {
         Ok(pod_list
             .items
             .iter()
-            .map(|pod| pod_to_status(pod))
+            .map(pod_to_status)
             .collect())
     }
 
@@ -347,7 +338,7 @@ impl ComponentStatusChecker for GiteaStatusChecker {
         Ok(pod_list
             .items
             .iter()
-            .map(|pod| pod_to_status(pod))
+            .map(pod_to_status)
             .collect())
     }
 
@@ -367,7 +358,7 @@ impl ComponentStatusChecker for GiteaStatusChecker {
                     {
                         if let Some(image) = &containers.image {
                             // Extract version from image tag
-                            let version = image.split(':').last().unwrap_or("unknown").to_string();
+                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
@@ -529,7 +520,7 @@ impl ComponentStatusChecker for RedisStatusChecker {
         Ok(pod_list
             .items
             .iter()
-            .map(|pod| pod_to_status(pod))
+            .map(pod_to_status)
             .collect())
     }
 
@@ -547,7 +538,7 @@ impl ComponentStatusChecker for RedisStatusChecker {
                         .and_then(|s| s.containers.first())
                     {
                         if let Some(image) = &containers.image {
-                            let version = image.split(':').last().unwrap_or("unknown").to_string();
+                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
@@ -687,7 +678,7 @@ impl ComponentStatusChecker for KedaStatusChecker {
         Ok(pod_list
             .items
             .iter()
-            .map(|pod| pod_to_status(pod))
+            .map(pod_to_status)
             .collect())
     }
 
@@ -704,7 +695,7 @@ impl ComponentStatusChecker for KedaStatusChecker {
                         .and_then(|s| s.containers.first())
                     {
                         if let Some(image) = &containers.image {
-                            let version = image.split(':').last().unwrap_or("unknown").to_string();
+                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,
@@ -817,7 +808,7 @@ impl ComponentStatusChecker for FluxStatusChecker {
         Ok(pod_list
             .items
             .iter()
-            .map(|pod| pod_to_status(pod))
+            .map(pod_to_status)
             .collect())
     }
 
@@ -839,7 +830,7 @@ impl ComponentStatusChecker for FluxStatusChecker {
                         .and_then(|s| s.containers.first())
                     {
                         if let Some(image) = &containers.image {
-                            let version = image.split(':').last().unwrap_or("unknown").to_string();
+                            let version = image.split(':').next_back().unwrap_or("unknown").to_string();
                             return Ok(Some(VersionInfo {
                                 version,
                                 git_commit: None,

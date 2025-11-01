@@ -49,6 +49,12 @@ pub struct PreFlightResult {
     pub warnings: Vec<String>,
 }
 
+impl Default for PreFlightResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PreFlightResult {
     pub fn new() -> Self {
         Self {
