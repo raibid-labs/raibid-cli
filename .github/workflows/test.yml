@@ -14,11 +14,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --workspace --lib
 
-  integration-tests:
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release
-      - run: cargo test --test '*' --no-fail-fast
+  # NOTE: Integration tests job removed - no integration tests exist yet in tests/ directory
+  # Will be re-added when integration tests are added to the codebase
