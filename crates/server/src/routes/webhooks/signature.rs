@@ -112,7 +112,11 @@ mod tests {
         assert!(!verify_github_signature(payload, sig_no_prefix, secret));
 
         // Verify wrong secret
-        assert!(!verify_github_signature(payload, &signature, "wrong-secret"));
+        assert!(!verify_github_signature(
+            payload,
+            &signature,
+            "wrong-secret"
+        ));
     }
 
     #[test]

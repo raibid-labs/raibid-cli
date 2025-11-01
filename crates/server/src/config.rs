@@ -69,14 +69,12 @@ impl ServerConfig {
     /// Load configuration from environment variables
     pub fn from_env() -> Self {
         Self {
-            host: std::env::var("RAIBID_SERVER_HOST")
-                .unwrap_or_else(|_| "127.0.0.1".to_string()),
+            host: std::env::var("RAIBID_SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
             port: std::env::var("RAIBID_SERVER_PORT")
                 .ok()
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(8080),
-            log_format: std::env::var("RAIBID_LOG_FORMAT")
-                .unwrap_or_else(|_| "text".to_string()),
+            log_format: std::env::var("RAIBID_LOG_FORMAT").unwrap_or_else(|_| "text".to_string()),
             cors_enabled: std::env::var("RAIBID_CORS_ENABLED")
                 .ok()
                 .and_then(|v| v.parse().ok())

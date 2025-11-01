@@ -38,7 +38,10 @@ impl std::fmt::Debug for AppState {
             .field("health_status", &self.health_status)
             .field("redis_client", &self.redis_client.is_some())
             .field("gitea_webhook_secret", &self.gitea_webhook_secret.is_some())
-            .field("github_webhook_secret", &self.github_webhook_secret.is_some())
+            .field(
+                "github_webhook_secret",
+                &self.github_webhook_secret.is_some(),
+            )
             .finish()
     }
 }
@@ -113,12 +116,16 @@ impl AppState {
     }
 
     /// Get Redis connection
-    pub async fn redis_connection(&self) -> Result<redis::aio::MultiplexedConnection, crate::error::ServerError> {
+    pub async fn redis_connection(
+        &self,
+    ) -> Result<redis::aio::MultiplexedConnection, crate::error::ServerError> {
         match &self.redis_client {
             Some(client) => client
                 .get_multiplexed_async_connection()
                 .await
-                .map_err(|e| crate::error::ServerError::Internal(format!("Redis connection error: {}", e))),
+                .map_err(|e| {
+                    crate::error::ServerError::Internal(format!("Redis connection error: {}", e))
+                }),
             None => Err(crate::error::ServerError::Internal(
                 "Redis client not configured".to_string(),
             )),

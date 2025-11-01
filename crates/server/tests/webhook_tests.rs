@@ -17,8 +17,8 @@ type HmacSha256 = Hmac<Sha256>;
 /// Helper to create a test app state with Redis
 fn create_test_state(gitea_secret: Option<String>, github_secret: Option<String>) -> AppState {
     // Use Redis URL from environment or default
-    let redis_url = std::env::var("RAIBID_REDIS_URL")
-        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_url =
+        std::env::var("RAIBID_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
     AppState::with_config(&redis_url, gitea_secret, github_secret)
         .unwrap_or_else(|_| AppState::new())
@@ -26,16 +26,14 @@ fn create_test_state(gitea_secret: Option<String>, github_secret: Option<String>
 
 /// Check if Redis is available
 async fn is_redis_available() -> bool {
-    let redis_url = std::env::var("RAIBID_REDIS_URL")
-        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_url =
+        std::env::var("RAIBID_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
     match redis::Client::open(redis_url.as_str()) {
-        Ok(client) => {
-            match client.get_multiplexed_async_connection().await {
-                Ok(_) => true,
-                Err(_) => false,
-            }
-        }
+        Ok(client) => match client.get_multiplexed_async_connection().await {
+            Ok(_) => true,
+            Err(_) => false,
+        },
         Err(_) => false,
     }
 }

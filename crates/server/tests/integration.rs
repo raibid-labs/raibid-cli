@@ -20,9 +20,7 @@ async fn test_server_starts_and_responds() {
 
     let server = Server::new(config.clone());
 
-    let server_handle = tokio::spawn(async move {
-        server.run().await
-    });
+    let server_handle = tokio::spawn(async move { server.run().await });
 
     sleep(Duration::from_millis(500)).await;
 
@@ -54,9 +52,7 @@ async fn test_health_endpoints_return_json() {
 
     let server = Server::new(config.clone());
 
-    let server_handle = tokio::spawn(async move {
-        server.run().await
-    });
+    let server_handle = tokio::spawn(async move { server.run().await });
 
     sleep(Duration::from_millis(500)).await;
 
@@ -69,17 +65,23 @@ async fn test_health_endpoints_return_json() {
     assert_eq!(json["status"], "ok");
     assert!(json.get("uptime_seconds").is_some());
 
-    let response = reqwest::get(format!("http://{}:{}/health/live", config.host, config.port))
-        .await
-        .expect("Failed to make request");
+    let response = reqwest::get(format!(
+        "http://{}:{}/health/live",
+        config.host, config.port
+    ))
+    .await
+    .expect("Failed to make request");
 
     assert_eq!(response.status(), 200);
     let json: serde_json::Value = response.json().await.expect("Failed to parse JSON");
     assert_eq!(json["status"], "alive");
 
-    let response = reqwest::get(format!("http://{}:{}/health/ready", config.host, config.port))
-        .await
-        .expect("Failed to make request");
+    let response = reqwest::get(format!(
+        "http://{}:{}/health/ready",
+        config.host, config.port
+    ))
+    .await
+    .expect("Failed to make request");
 
     assert_eq!(response.status(), 200);
     let json: serde_json::Value = response.json().await.expect("Failed to parse JSON");
@@ -105,9 +107,7 @@ async fn test_request_id_header() {
 
     let server = Server::new(config.clone());
 
-    let server_handle = tokio::spawn(async move {
-        server.run().await
-    });
+    let server_handle = tokio::spawn(async move { server.run().await });
 
     sleep(Duration::from_millis(500)).await;
 

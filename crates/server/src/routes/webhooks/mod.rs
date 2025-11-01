@@ -17,7 +17,7 @@ use tracing::{info, warn};
 use uuid::Uuid;
 
 use crate::{error::ServerError, state::AppState};
-pub use payloads::{GiteaWebhookPayload, GitHubWebhookPayload};
+pub use payloads::{GitHubWebhookPayload, GiteaWebhookPayload};
 use signature::{verify_gitea_signature, verify_github_signature};
 
 /// Job metadata for Redis Stream
@@ -59,7 +59,9 @@ async fn gitea_webhook_handler(
         let signature = headers
             .get("X-Gitea-Signature")
             .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| ServerError::Unauthorized("Missing X-Gitea-Signature header".to_string()))?;
+            .ok_or_else(|| {
+                ServerError::Unauthorized("Missing X-Gitea-Signature header".to_string())
+            })?;
 
         if !verify_gitea_signature(&body, signature, secret) {
             warn!("Invalid Gitea webhook signature");
@@ -85,7 +87,10 @@ async fn gitea_webhook_handler(
     // Queue job to Redis Streams
     let job_id = queue_job(&state, &metadata).await?;
 
-    info!("Queued job {} for repository {}", job_id, metadata.repository);
+    info!(
+        "Queued job {} for repository {}",
+        job_id, metadata.repository
+    );
 
     Ok((
         StatusCode::ACCEPTED,
@@ -109,7 +114,9 @@ async fn github_webhook_handler(
         let signature = headers
             .get("X-Hub-Signature-256")
             .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| ServerError::Unauthorized("Missing X-Hub-Signature-256 header".to_string()))?;
+            .ok_or_else(|| {
+                ServerError::Unauthorized("Missing X-Hub-Signature-256 header".to_string())
+            })?;
 
         if !verify_github_signature(&body, signature, secret) {
             warn!("Invalid GitHub webhook signature");
@@ -135,7 +142,10 @@ async fn github_webhook_handler(
     // Queue job to Redis Streams
     let job_id = queue_job(&state, &metadata).await?;
 
-    info!("Queued job {} for repository {}", job_id, metadata.repository);
+    info!(
+        "Queued job {} for repository {}",
+        job_id, metadata.repository
+    );
 
     Ok((
         StatusCode::ACCEPTED,
@@ -155,11 +165,7 @@ async fn queue_job(state: &AppState, metadata: &JobMetadata) -> Result<String, S
 
     // Add job to Redis Stream using XADD
     let _stream_id: String = conn
-        .xadd(
-            "ci:jobs",
-            "*",
-            &[("data", metadata_json.as_str())],
-        )
+        .xadd("ci:jobs", "*", &[("data", metadata_json.as_str())])
         .await
         .map_err(|e| ServerError::Internal(format!("Failed to queue job: {}", e)))?;
 
