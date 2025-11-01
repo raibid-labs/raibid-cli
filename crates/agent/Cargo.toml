@@ -7,6 +7,10 @@ license.workspace = true
 repository.workspace = true
 description = "CI agent runner for raibid-ci"
 
+[[bin]]
+name = "raibid-agent"
+path = "src/main.rs"
+
 [dependencies]
 # Workspace crates
 raibid-common = { workspace = true }
@@ -28,8 +32,15 @@ async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+# Redis
+redis = { workspace = true }
+
+# Git
+git2 = { workspace = true }
+
 # Utilities
 chrono = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
