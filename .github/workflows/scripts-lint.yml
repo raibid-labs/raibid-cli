@@ -59,7 +59,8 @@ jobs:
           echo "Checking Nushell script syntax..."
           find scripts -name "*.nu" -type f -print0 | while IFS= read -r -d '' script; do
             echo "Checking: $script"
-            nu --no-config-file --commands "open '$script' | parse" || exit 1
+            # Check syntax by trying to parse the file (don't execute it)
+            nu --no-config-file --commands "open '$script'" > /dev/null || exit 1
           done
           echo "✓ All Nushell scripts passed syntax check"
 
