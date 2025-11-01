@@ -2,32 +2,11 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'crates/**'
-      - 'tests/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/test.yml'
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'crates/**'
-      - 'tests/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/test.yml'
-  schedule:
-    # Run nightly tests at 2 AM UTC
-    - cron: '0 2 * * *'
-  workflow_dispatch:
-
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
+    branches: [main, develop]
 
 jobs:
-  # Unit tests
   unit-tests:
     name: Unit Tests
     runs-on: ${{ matrix.os }}
