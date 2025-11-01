@@ -58,6 +58,10 @@ cd raibid-cli
 # Build release binary
 cargo build --release
 
+# Verify the build succeeded
+ls -lh target/release/raibid-cli
+./target/release/raibid-cli --version
+
 # Install to user-local directory (recommended, no sudo required)
 mkdir -p ~/.local/bin
 cp target/release/raibid-cli ~/.local/bin/
@@ -65,6 +69,20 @@ cp target/release/raibid-cli ~/.local/bin/
 # Add to PATH if not already (add to your ~/.bashrc or ~/.zshrc)
 export PATH="$HOME/.local/bin:$PATH"
 ```
+
+**Verify Build Succeeded:**
+
+After building, verify the binary was created:
+
+```bash
+# For native build
+ls -lh target/release/raibid-cli
+./target/release/raibid-cli --version
+
+# Expected output: raibid-cli 0.1.0
+```
+
+If the binary is not found at `target/release/raibid-cli`, you may have `CARGO_TARGET_DIR` environment variable set. See the [Troubleshooting](#troubleshooting) section below.
 
 **Alternative: System-wide Installation**
 
@@ -84,11 +102,29 @@ rustup target add aarch64-unknown-linux-gnu
 # Build for ARM64
 cargo build --release --target aarch64-unknown-linux-gnu
 
-# Binary will be at: target/aarch64-unknown-linux-gnu/release/raibid-cli
+# Verify the build succeeded
+ls -lh target/aarch64-unknown-linux-gnu/release/raibid-cli
+
+# Verify architecture (optional)
+file target/aarch64-unknown-linux-gnu/release/raibid-cli
 
 # Install to user-local directory
 mkdir -p ~/.local/bin
 cp target/aarch64-unknown-linux-gnu/release/raibid-cli ~/.local/bin/
+```
+
+**Verify ARM64 Build:**
+
+```bash
+# Check binary exists
+ls -lh target/aarch64-unknown-linux-gnu/release/raibid-cli
+
+# Verify it's an ARM64 binary
+file target/aarch64-unknown-linux-gnu/release/raibid-cli
+# Expected output: ELF 64-bit LSB executable, ARM aarch64...
+
+# Test version (only works on ARM64 systems)
+./target/aarch64-unknown-linux-gnu/release/raibid-cli --version
 ```
 
 #### Installation Directory
