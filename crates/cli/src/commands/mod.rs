@@ -5,8 +5,8 @@
 
 pub mod config;
 pub mod setup;
-pub mod teardown;
 pub mod status;
+pub mod teardown;
 
 // Placeholder for future command implementations
 // Command modules will be added in future issues:
