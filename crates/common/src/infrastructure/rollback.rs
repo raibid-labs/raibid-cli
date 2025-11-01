@@ -460,7 +460,7 @@ mod tests {
     #[test]
     fn test_rollback_execution_order() {
         let mut manager = RollbackManager::new("test");
-        let mut order = Vec::new();
+        let order = Vec::new();
 
         manager.add_action("first", {
             let mut order = order.clone();
